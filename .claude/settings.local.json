@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx electron-vite build:*)",
+      "Bash(ls:*)",
+      "Bash(dir:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(npx electron-rebuild:*)",
+      "Bash(ping:*)",
+      "Bash(del:*)",
+      "Bash(cmd /c del /q:*)",
+      "Bash(where:*)",
+      "Bash(pdftotext:*)",
+      "Bash(cmd /c:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(echo:*)",
+      "Bash(npm uninstall:*)"
+    ]
+  }
+}
