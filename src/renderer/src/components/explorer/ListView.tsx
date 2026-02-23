@@ -2,11 +2,13 @@
  * Virtualized List View — fixed 44px row height using TanStack Virtual.
  * Phase 4: adds useDraggable on all items, useDroppable on folder items,
  * inline rename, context menu, and pending-op status indicators.
+ * Phase 10: adds star toggle icon.
  */
 
 import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { Star } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
 import { InlineRename } from './InlineRename'
@@ -29,6 +31,7 @@ interface ListViewProps {
   onRenameSubmit?: (fileId: string, newName: string) => void
   onRenameCancel?: () => void
   onContextMenu?: (itemId: string, x: number, y: number) => void
+  onToggleStar?: (itemId: string, starred: boolean) => void
 }
 
 function formatBytes(bytes: number | null): string {
@@ -75,7 +78,8 @@ const ListRow = React.memo(function ListRow({
   isRenaming,
   onRenameSubmit,
   onRenameCancel,
-  onContextMenu
+  onContextMenu,
+  onToggleStar
 }: {
   item: DriveItemDTO
   isSelected: boolean
@@ -88,6 +92,7 @@ const ListRow = React.memo(function ListRow({
   onRenameSubmit?: (fileId: string, newName: string) => void
   onRenameCancel?: () => void
   onContextMenu?: (itemId: string, x: number, y: number) => void
+  onToggleStar?: (itemId: string, starred: boolean) => void
 }) {
   const thumbnailUrl = useThumbnail({
     fileId: item.id,
@@ -130,7 +135,7 @@ const ListRow = React.memo(function ListRow({
       role="row"
       tabIndex={isFocused ? 0 : -1}
       aria-selected={isSelected}
-      className={`flex items-center gap-3 px-4 h-full select-none cursor-default transition-colors
+      className={`flex items-center gap-3 px-4 h-full select-none cursor-default transition-colors group
         ${isSelected ? 'bg-blue-50 dark:bg-blue-600/20 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/30'}
         ${isFocused ? 'ring-1 ring-inset ring-blue-400/60' : ''}
         ${isDragging ? 'opacity-30' : ''}
@@ -180,6 +185,22 @@ const ListRow = React.memo(function ListRow({
         )}
       </div>
 
+      {/* Star toggle */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleStar?.(item.id, !item.starred)
+        }}
+        className={`flex-shrink-0 p-0.5 rounded transition-colors ${
+          item.starred
+            ? 'text-amber-400 hover:text-amber-500'
+            : 'text-transparent group-hover:text-gray-300 dark:group-hover:text-gray-600 hover:!text-amber-400'
+        }`}
+        title={item.starred ? 'Unstar' : 'Star'}
+      >
+        <Star size={14} className={item.starred ? 'fill-amber-400' : ''} />
+      </button>
+
       {/* Modified */}
       <div className="flex-shrink-0 w-28 text-xs text-gray-500 dark:text-gray-400 text-right">
         {formatDate(item.modifiedTimeMs)}
@@ -206,7 +227,8 @@ export default function ListView({
   renamingId,
   onRenameSubmit,
   onRenameCancel,
-  onContextMenu
+  onContextMenu,
+  onToggleStar
 }: ListViewProps): React.JSX.Element {
   const parentRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -232,6 +254,7 @@ export default function ListView({
       <div className="flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <div className="w-7" />
         <div className="flex-1 min-w-0">Name</div>
+        <div className="w-5" />
         <div className="w-28 text-right">Modified</div>
         <div className="w-20 text-right">Size</div>
       </div>
@@ -295,6 +318,7 @@ export default function ListView({
                   onRenameSubmit={onRenameSubmit}
                   onRenameCancel={onRenameCancel}
                   onContextMenu={onContextMenu}
+                  onToggleStar={onToggleStar}
                 />
               </div>
             )

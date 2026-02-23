@@ -12,7 +12,8 @@ const DEFAULTS: Record<string, string> = {
   polling_interval_ms: '30000',
   keep_signed_in: 'true',
   ignore_hidden_files: 'false',
-  notify_on_sync_complete: 'true'
+  notify_on_sync_complete: 'true',
+  last_seen_version: '0.0.0'
 }
 
 export function getSetting(key: string): string | null {

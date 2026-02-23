@@ -361,6 +361,14 @@ export function getItemCounts(): { totalFiles: number; totalFolders: number; tot
 }
 
 /**
+ * Phase 10: Update starred status for a single item.
+ */
+export function updateStarred(fileId: string, starred: boolean): void {
+  const db = getDb()
+  db.prepare('UPDATE drive_items SET starred = ? WHERE id = ?').run(starred ? 1 : 0, fileId)
+}
+
+/**
  * Phase 9: Get starred items for the sidebar.
  */
 export function getStarredItems(limit = 50): DriveItemRow[] {

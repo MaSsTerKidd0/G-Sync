@@ -7,10 +7,13 @@ interface ContextMenuProps {
   selectedCount: number
   hasFocusedItem: boolean
   isFocusedFolder: boolean
+  isFocusedStarred: boolean
   onOpen: () => void
   onRename: () => void
   onTrash: () => void
   onDelete: () => void
+  onToggleStar: () => void
+  onDownload: () => void
   onClose: () => void
 }
 
@@ -29,10 +32,13 @@ export function ContextMenu({
   selectedCount,
   hasFocusedItem,
   isFocusedFolder,
+  isFocusedStarred,
   onOpen,
   onRename,
   onTrash,
   onDelete,
+  onToggleStar,
+  onDownload,
   onClose
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
@@ -60,13 +66,24 @@ export function ContextMenu({
 
   // Adjust position to stay within viewport
   const adjustedX = Math.min(x, window.innerWidth - 220)
-  const adjustedY = Math.min(y, window.innerHeight - 200)
+  const adjustedY = Math.min(y, window.innerHeight - 280)
 
   const items: MenuItem[] = [
     {
       label: isFocusedFolder ? 'Open Folder' : 'Open',
       action: onOpen,
       disabled: !hasFocusedItem
+    },
+    { label: '', action: () => {}, separator: true },
+    {
+      label: isFocusedStarred ? 'Remove Star' : 'Add Star',
+      action: onToggleStar,
+      disabled: !hasFocusedItem
+    },
+    {
+      label: selectedCount > 1 ? `Download ${selectedCount} items` : 'Download',
+      action: onDownload,
+      disabled: selectedCount === 0
     },
     { label: '', action: () => {}, separator: true },
     {

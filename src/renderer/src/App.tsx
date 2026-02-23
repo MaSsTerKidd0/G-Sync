@@ -7,6 +7,7 @@ import DetailsPanel from './components/layout/DetailsPanel'
 import ExplorerRoot from './components/explorer/ExplorerRoot'
 import CleanupDashboard from './components/cleanup/CleanupDashboard'
 import SettingsPanel from './components/SettingsPanel'
+import PatchNotesModal from './components/PatchNotesModal'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
 type AuthStatus = 'disconnected' | 'connecting' | 'connected'
@@ -38,6 +39,10 @@ function App(): React.JSX.Element {
   // ── Details panel ──
   const [selectedItem, setSelectedItem] = useState<DriveItemDTO | null>(null)
 
+  // ── Patch notes modal ──
+  const [showPatchNotes, setShowPatchNotes] = useState(false)
+  const [appVersion, setAppVersion] = useState('1.0.0')
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
@@ -65,6 +70,36 @@ function App(): React.JSX.Element {
   useEffect(() => {
     checkStatus()
   }, [checkStatus])
+
+  // ── Patch notes version check ──
+  useEffect(() => {
+    async function checkVersion() {
+      try {
+        const [info, lastSeen] = await Promise.all([
+          window.gsync.settings.getAppInfo(),
+          window.gsync.settings.get('last_seen_version')
+        ])
+        setAppVersion(info.version)
+        if (lastSeen !== info.version) {
+          setShowPatchNotes(true)
+        }
+      } catch {
+        // Settings may not be ready
+      }
+    }
+    checkVersion()
+  }, [])
+
+  const handleDismissPatchNotes = useCallback(async (dontShowAgain: boolean) => {
+    setShowPatchNotes(false)
+    if (dontShowAgain) {
+      try {
+        await window.gsync.settings.set('last_seen_version', appVersion)
+      } catch {
+        // non-critical
+      }
+    }
+  }, [appVersion])
 
   const handleLogin = async (): Promise<void> => {
     setAuthStatus('connecting')
@@ -277,7 +312,11 @@ function App(): React.JSX.Element {
 
           {/* Details panel */}
           {activeView === 'explorer' && selectedItem && (
-            <DetailsPanel item={selectedItem} onClose={() => setSelectedItem(null)} />
+            <DetailsPanel
+              item={selectedItem}
+              onClose={() => setSelectedItem(null)}
+              onToggleStar={(itemId, starred) => window.gsync.db.updateStarred(itemId, starred)}
+            />
           )}
         </div>
 
@@ -289,6 +328,11 @@ function App(): React.JSX.Element {
           counts={syncCounts}
         />
       </main>
+
+      {/* Patch notes modal */}
+      {showPatchNotes && (
+        <PatchNotesModal version={appVersion} onDismiss={handleDismissPatchNotes} />
+      )}
     </div>
   )
 }

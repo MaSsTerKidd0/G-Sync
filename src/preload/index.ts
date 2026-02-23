@@ -210,7 +210,9 @@ const gsyncApi = {
     counts: (): Promise<{ totalFiles: number; totalFolders: number; totalRemoved: number }> =>
       ipcRenderer.invoke('db:counts'),
     starredItems: (limit?: number): Promise<DriveItemRow[]> =>
-      ipcRenderer.invoke('db:starredItems', limit)
+      ipcRenderer.invoke('db:starredItems', limit),
+    updateStarred: (fileId: string, starred: boolean): Promise<void> =>
+      ipcRenderer.invoke('db:updateStarred', { fileId, starred })
   },
 
   // ── Phase 3: Explorer API ──
@@ -325,6 +327,30 @@ const gsyncApi = {
       ): void => cb(payload)
       ipcRenderer.on('ops:error', handler)
       return () => ipcRenderer.removeListener('ops:error', handler)
+    },
+
+    // Phase 10: Download operations
+    downloadFile: (args: {
+      fileId: string
+      fileName: string
+      mimeType: string
+    }): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('ops:downloadFile', args),
+
+    downloadZip: (args: {
+      items: Array<{ fileId: string; fileName: string; mimeType: string }>
+    }): Promise<{ success: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke('ops:downloadZip', args),
+
+    onDownloadProgress: (
+      cb: (payload: { phase: string; fileName: string; current?: number; total?: number; error?: string }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: Electron.IpcRendererEvent,
+        payload: { phase: string; fileName: string; current?: number; total?: number; error?: string }
+      ): void => cb(payload)
+      ipcRenderer.on('download:progress', handler)
+      return () => ipcRenderer.removeListener('download:progress', handler)
     }
   },
 

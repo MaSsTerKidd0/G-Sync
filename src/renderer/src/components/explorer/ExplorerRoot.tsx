@@ -1,5 +1,5 @@
 /**
- * ExplorerRoot — the main explorer component (Phase 3 + Phase 4).
+ * ExplorerRoot — the main explorer component (Phase 3 + Phase 4 + Phase 10).
  *
  * Orchestrates:
  * - Breadcrumb navigation (droppable in list/grid modes)
@@ -8,8 +8,9 @@
  * - Keyboard shortcuts (Backspace, Enter, Escape, Delete, F2)
  * - Phase 4: DndContext for drag-and-drop (list/grid), context menu, inline rename,
  *   ops status bar, ops panel, confirm dialog
+ * - Phase 10: star toggle, download, selection action bar
  *
- * Search, sort, and view mode are now controlled by the parent (App → TopBar).
+ * Search, sort, and view mode are now controlled by the parent (App -> TopBar).
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
@@ -24,7 +25,7 @@ import {
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
-import { Search, Folder, Loader2 } from 'lucide-react'
+import { Search, Folder, Loader2, Download, X } from 'lucide-react'
 import type {
   ViewMode,
   SortBy,
@@ -69,11 +70,11 @@ export default function ExplorerRoot({
   sortDir,
   onSelectedItemChange
 }: ExplorerRootProps) {
-  // ── Navigation state ──
+  // -- Navigation state --
   const [folderStack, setFolderStack] = useState<BreadcrumbEntry[]>([])
   const currentFolderId = folderStack.length > 0 ? folderStack[folderStack.length - 1]!.id : 'root'
 
-  // ── Query ──
+  // -- Query --
   const query: ExplorerQuery = {
     parentId: currentFolderId,
     viewMode,
@@ -85,7 +86,7 @@ export default function ExplorerRoot({
 
   const { items, totalCount, loading, loadMore, hasMore } = useExplorerData(query)
 
-  // ── Selection ──
+  // -- Selection --
   const [selection, setSelection] = useState<SelectionState>({
     selectedIds: new Set()
   })
@@ -127,11 +128,11 @@ export default function ExplorerRoot({
     columns: viewMode === 'grid' ? gridColumns : 1
   })
 
-  // ── Phase 4: Ops status ──
+  // -- Phase 4: Ops status --
   const { counts, recentOps, pendingFileIds, needsUserFileIds, retry, rollback, cancel } = useOpsStatus()
   const [opsPanelOpen, setOpsPanelOpen] = useState(false)
 
-  // ── Phase 4: Drag-and-drop state ──
+  // -- Phase 4: Drag-and-drop state --
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor)
@@ -191,7 +192,7 @@ export default function ExplorerRoot({
     ? selection.selectedIds.size
     : 1
 
-  // ── Phase 4: Context menu state ──
+  // -- Phase 4: Context menu state --
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; itemId: string } | null>(null)
 
   const handleContextMenu = useCallback(
@@ -204,7 +205,7 @@ export default function ExplorerRoot({
     [selection.selectedIds]
   )
 
-  // ── Phase 4: Inline rename state ──
+  // -- Phase 4: Inline rename state --
   const [renamingId, setRenamingId] = useState<string | null>(null)
 
   const handleRenameSubmit = useCallback((fileId: string, newName: string) => {
@@ -217,7 +218,7 @@ export default function ExplorerRoot({
     setRenamingId(null)
   }, [])
 
-  // ── Phase 4: Delete confirmation state ──
+  // -- Phase 4: Delete confirmation state --
   const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[] | null>(null)
 
   const handleTrash = useCallback(() => {
@@ -234,7 +235,40 @@ export default function ExplorerRoot({
     setDeleteConfirmIds(null)
   }, [deleteConfirmIds])
 
-  // ── Navigation ──
+  // -- Phase 10: Star toggle --
+  const handleToggleStar = useCallback((itemId: string, starred: boolean) => {
+    window.gsync.db.updateStarred(itemId, starred)
+  }, [])
+
+  // -- Phase 10: Download --
+  const handleDownload = useCallback(() => {
+    if (selection.selectedIds.size === 0) return
+
+    const selectedItems = items.filter((i) => selection.selectedIds.has(i.id))
+    // Filter out folders for now — Drive API doesn't support direct folder download
+    const downloadableItems = selectedItems.filter((i) => i.type !== 'folder')
+
+    if (downloadableItems.length === 0) return
+
+    if (downloadableItems.length === 1) {
+      const item = downloadableItems[0]!
+      window.gsync.ops.downloadFile({
+        fileId: item.id,
+        fileName: item.name,
+        mimeType: item.mimeType
+      })
+    } else {
+      window.gsync.ops.downloadZip({
+        items: downloadableItems.map((i) => ({
+          fileId: i.id,
+          fileName: i.name,
+          mimeType: i.mimeType
+        }))
+      })
+    }
+  }, [selection.selectedIds, items])
+
+  // -- Navigation --
   const handleOpenItem = useCallback(
     (id: string) => {
       const item = items.find((i) => i.id === id)
@@ -270,7 +304,7 @@ export default function ExplorerRoot({
     setContextMenu(null)
   }, [])
 
-  // ── Range-based data loading for virtualization ──
+  // -- Range-based data loading for virtualization --
   const onRangeNeeded = useCallback(
     (_start: number, end: number) => {
       if (end >= items.length - 50 && hasMore) {
@@ -280,7 +314,7 @@ export default function ExplorerRoot({
     [items.length, hasMore, loadMore]
   )
 
-  // ── Keyboard shortcuts ──
+  // -- Keyboard shortcuts --
   const handleContainerKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (renamingId) return
@@ -346,7 +380,7 @@ export default function ExplorerRoot({
 
   if (!connected) return null
 
-  // ── View content (list / grid) ──
+  // -- View content (list / grid) --
   const viewContent = viewMode === 'list' ? (
     <ListView
       items={items}
@@ -362,6 +396,7 @@ export default function ExplorerRoot({
       onRenameSubmit={handleRenameSubmit}
       onRenameCancel={handleRenameCancel}
       onContextMenu={handleContextMenu}
+      onToggleStar={handleToggleStar}
     />
   ) : (
     <GridView
@@ -378,6 +413,7 @@ export default function ExplorerRoot({
       onRenameSubmit={handleRenameSubmit}
       onRenameCancel={handleRenameCancel}
       onContextMenu={handleContextMenu}
+      onToggleStar={handleToggleStar}
     />
   )
 
@@ -389,7 +425,7 @@ export default function ExplorerRoot({
         onKeyDown={handleContainerKeyDown}
         tabIndex={-1}
       >
-        {/* ── Breadcrumbs ── */}
+        {/* -- Breadcrumbs -- */}
         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3 flex-shrink-0">
           <DroppableBreadcrumb folderId="root" onClick={navigateToRoot}>
             My Drive
@@ -412,7 +448,31 @@ export default function ExplorerRoot({
           )}
         </div>
 
-        {/* ── Content ── */}
+        {/* -- Selection Action Bar -- */}
+        {selection.selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 mb-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/30 flex-shrink-0">
+            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+              {selection.selectedIds.size} selected
+            </span>
+            <div className="flex-1" />
+            <button
+              onClick={handleDownload}
+              className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-600/20 hover:bg-blue-200 dark:hover:bg-blue-600/30 rounded-md transition-colors"
+            >
+              <Download size={13} />
+              Download
+            </button>
+            <button
+              onClick={() => setSelection({ selectedIds: new Set() })}
+              className="p-1 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 rounded transition-colors"
+              title="Clear selection"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* -- Content -- */}
         <div className="flex-1 min-h-0 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900/50 flex flex-col">
           {loading && items.length === 0 ? (
             <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
@@ -453,7 +513,7 @@ export default function ExplorerRoot({
             </DndContext>
           )}
 
-          {/* ── Ops Status Bar ── */}
+          {/* -- Ops Status Bar -- */}
           <OpsStatusBar
             counts={counts}
             onTogglePanel={() => setOpsPanelOpen((prev) => !prev)}
@@ -471,7 +531,7 @@ export default function ExplorerRoot({
         </div>
       </div>
 
-      {/* ── Context Menu (portal) ── */}
+      {/* -- Context Menu (portal) -- */}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}
@@ -479,6 +539,7 @@ export default function ExplorerRoot({
           selectedCount={selection.selectedIds.size}
           hasFocusedItem={!!focusedItem}
           isFocusedFolder={focusedItem?.type === 'folder'}
+          isFocusedStarred={focusedItem?.starred ?? false}
           onOpen={() => {
             if (selection.focusedId) handleOpenItem(selection.focusedId)
           }}
@@ -489,11 +550,15 @@ export default function ExplorerRoot({
           }}
           onTrash={handleTrash}
           onDelete={() => setDeleteConfirmIds([...selection.selectedIds])}
+          onToggleStar={() => {
+            if (focusedItem) handleToggleStar(focusedItem.id, !focusedItem.starred)
+          }}
+          onDownload={handleDownload}
           onClose={() => setContextMenu(null)}
         />
       )}
 
-      {/* ── Delete Confirmation Dialog ── */}
+      {/* -- Delete Confirmation Dialog -- */}
       {deleteConfirmIds && (
         <ConfirmDialog
           title="Delete permanently?"

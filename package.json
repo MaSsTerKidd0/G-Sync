@@ -1,6 +1,6 @@
 {
   "name": "g-sync",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "G-Sync - Google Drive sync desktop app",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -28,6 +28,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-virtual": "^3.13.18",
+    "archiver": "^7.0.1",
     "better-sqlite3": "^12.6.2",
     "bottleneck": "^2.19.5",
     "dotenv": "^17.3.1",
@@ -38,6 +39,7 @@
     "@electron-toolkit/eslint-config-prettier": "^3.0.0",
     "@electron-toolkit/eslint-config-ts": "^3.1.0",
     "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/archiver": "^7.0.0",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.19.1",
     "@types/react": "^19.2.7",

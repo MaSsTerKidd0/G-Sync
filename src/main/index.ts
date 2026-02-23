@@ -1,12 +1,12 @@
-import { app, shell, BrowserWindow, ipcMain, Notification } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Notification, dialog } from 'electron'
 import { join } from 'path'
-import { existsSync, unlinkSync, statSync } from 'fs'
+import { existsSync, unlinkSync, statSync, writeFile } from 'fs'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { config } from 'dotenv'
 import icon from '../../resources/icon.png?asset'
 import { startLogin, getAuthStatus, disconnect, refreshAccessToken } from './auth/googleOAuth'
 import { loadTokens, isTokenExpired, getTokenSecurityInfo } from './auth/tokenStore'
-import { listFiles } from './drive/driveApi'
+import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension } from './drive/driveApi'
 import { initDatabase, closeDatabase } from './db/database'
 import { runMigrations } from './db/migrations'
 import { syncEngine } from './sync/syncEngine'
@@ -19,10 +19,13 @@ import {
   getBreadcrumbs,
   getItemCounts,
   getStarredItems,
+  updateStarred,
   listFolderPage,
   type SortBy,
   type SortDir
 } from './db/queryLayer'
+import { updateFile } from './drive/driveApi'
+import { throttledDriveCall } from './drive/rateLimiter'
 import { resetStmts } from './db/syncWriter'
 import { getThumbnail, clearThumbnailCache } from './thumbnails/thumbnailProxy'
 import {
@@ -76,6 +79,7 @@ import { auditMainWindow, logAuditResults } from './security/selfAudit'
 import { createBackup, listBackups } from './db/backup'
 import { getSetting, setSetting, getAllSettings, getKeepSignedIn } from './db/settingsStore'
 import { clearTokens } from './auth/tokenStore'
+import { downloadAsZip, type ZipDownloadItem } from './download/zipDownloader'
 
 // Load .env ONCE — try cwd first (dev mode), then app path (production).
 const cwd = config()
@@ -526,6 +530,25 @@ function registerIpcHandlers(): void {
     return getStarredItems(clampMax(limit, 200, 50))
   })
 
+  // ── Phase 10: Star/unstar toggle ──
+
+  ipcMain.handle('db:updateStarred', async (_e, args: { fileId: string; starred: boolean }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    assertBoolean(args?.starred, 'starred')
+
+    // Update local DB immediately
+    updateStarred(args.fileId, args.starred)
+    sendToRenderer('explorer:dbChanged', { reason: 'dbChanged' })
+
+    // Sync back to Google Drive (fire-and-forget)
+    throttledDriveCall(() => updateFile({
+      fileId: args.fileId,
+      body: { starred: args.starred }
+    })).catch((err) => {
+      console.warn('[ipc] Failed to sync starred to Drive:', err)
+    })
+  })
+
   // ── Phase 9: Manual sync trigger ──
 
   ipcMain.handle('sync:triggerSync', async () => {
@@ -534,6 +557,110 @@ function registerIpcHandlers(): void {
       return { success: true }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
+      return { success: false, error: message }
+    }
+  })
+
+  // ── Phase 10: File download ──
+
+  ipcMain.handle('ops:downloadFile', async (_e, args: {
+    fileId: string
+    fileName: string
+    mimeType: string
+  }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    assertNonEmptyString(args?.fileName, 'fileName')
+
+    try {
+      // Determine default filename with export extension if needed
+      let defaultName = args.fileName
+      if (isWorkspaceMime(args.mimeType)) {
+        const ext = getExportExtension(args.mimeType)
+        if (ext && !defaultName.endsWith(ext)) {
+          defaultName = defaultName + ext
+        }
+      }
+
+      const result = await dialog.showSaveDialog({
+        defaultPath: defaultName,
+        title: 'Save File'
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'cancelled' }
+      }
+
+      sendToRenderer('download:progress', { phase: 'downloading', fileName: args.fileName })
+
+      const buffer = await throttledDriveCall(() =>
+        downloadFileBuffer(args.fileId, args.mimeType)
+      )
+
+      await new Promise<void>((resolve, reject) => {
+        writeFile(result.filePath!, buffer, (err) => {
+          if (err) reject(err)
+          else resolve()
+        })
+      })
+
+      sendToRenderer('download:progress', { phase: 'complete', fileName: args.fileName })
+      return { success: true, path: result.filePath }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      sendToRenderer('download:progress', { phase: 'error', fileName: args.fileName, error: message })
+      return { success: false, error: message }
+    }
+  })
+
+  // ── Phase 10: Multi-file zip download ──
+
+  ipcMain.handle('ops:downloadZip', async (_e, args: {
+    items: ZipDownloadItem[]
+  }) => {
+    if (!args?.items || args.items.length === 0) {
+      return { success: false, error: 'No items to download' }
+    }
+
+    try {
+      const result = await dialog.showSaveDialog({
+        defaultPath: `G-Sync-Download-${args.items.length}-files.zip`,
+        title: 'Save Zip Archive',
+        filters: [{ name: 'ZIP Archives', extensions: ['zip'] }]
+      })
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'cancelled' }
+      }
+
+      sendToRenderer('download:progress', {
+        phase: 'downloading',
+        fileName: `${args.items.length} files`,
+        current: 0,
+        total: args.items.length
+      })
+
+      await downloadAsZip(args.items, result.filePath, (progress) => {
+        sendToRenderer('download:progress', {
+          phase: 'downloading',
+          fileName: progress.fileName,
+          current: progress.current,
+          total: progress.total
+        })
+      })
+
+      sendToRenderer('download:progress', {
+        phase: 'complete',
+        fileName: `${args.items.length} files`
+      })
+
+      return { success: true, path: result.filePath }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      sendToRenderer('download:progress', {
+        phase: 'error',
+        fileName: `${args.items.length} files`,
+        error: message
+      })
       return { success: false, error: message }
     }
   })

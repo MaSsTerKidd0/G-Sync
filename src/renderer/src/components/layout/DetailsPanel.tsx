@@ -1,9 +1,10 @@
-import { ChevronRight, Folder, File, FileText, Image, Video, Music } from 'lucide-react'
+import { ChevronRight, Folder, File, FileText, Image, Video, Music, Star } from 'lucide-react'
 import type { DriveItemDTO } from '../../types/explorer'
 
 interface DetailsPanelProps {
   item: DriveItemDTO | null
   onClose: () => void
+  onToggleStar?: (itemId: string, starred: boolean) => void
 }
 
 function FileTypeIcon({ mimeType, className }: { mimeType: string; className?: string }) {
@@ -48,7 +49,7 @@ function mimeLabel(mimeType: string): string {
   return suffix.replace('vnd.google-apps.', '')
 }
 
-export default function DetailsPanel({ item, onClose }: DetailsPanelProps) {
+export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPanelProps) {
   if (!item) return null
 
   return (
@@ -71,12 +72,23 @@ export default function DetailsPanel({ item, onClose }: DetailsPanelProps) {
           <FileTypeIcon mimeType={item.mimeType} className="w-16 h-16 opacity-30" />
         </div>
 
-        {/* Name + type icon */}
+        {/* Name + type icon + star */}
         <div className="flex items-start gap-3">
           <FileTypeIcon mimeType={item.mimeType} className="w-5 h-5 mt-0.5 shrink-0" />
-          <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 break-all leading-snug">
+          <h4 className="flex-1 font-semibold text-sm text-gray-900 dark:text-gray-100 break-all leading-snug">
             {item.name}
           </h4>
+          <button
+            onClick={() => onToggleStar?.(item.id, !item.starred)}
+            className={`p-1 rounded-md transition-colors shrink-0 ${
+              item.starred
+                ? 'text-amber-400 hover:text-amber-500'
+                : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
+            }`}
+            title={item.starred ? 'Unstar' : 'Star'}
+          >
+            <Star size={16} className={item.starred ? 'fill-amber-400' : ''} />
+          </button>
         </div>
 
         {/* Metadata grid */}
@@ -109,6 +121,12 @@ export default function DetailsPanel({ item, onClose }: DetailsPanelProps) {
               {item.mimeType}
             </span>
           </div>
+          {item.starred && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-gray-400 dark:text-gray-500 font-medium">Starred</span>
+              <span className="text-amber-500 font-medium">Yes</span>
+            </div>
+          )}
           {item.trashed && (
             <div className="flex items-center justify-between text-xs">
               <span className="text-gray-400 dark:text-gray-500 font-medium">Status</span>

@@ -2,11 +2,13 @@
  * Virtualized Grid/Card View — fixed card dimensions using TanStack Virtual lanes.
  * Phase 4: adds useDraggable on all items, useDroppable on folder items,
  * inline rename, context menu, and pending-op status indicators.
+ * Phase 10: adds star toggle icon.
  */
 
 import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { Star } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
 import { InlineRename } from './InlineRename'
@@ -31,6 +33,7 @@ interface GridViewProps {
   onRenameSubmit?: (fileId: string, newName: string) => void
   onRenameCancel?: () => void
   onContextMenu?: (itemId: string, x: number, y: number) => void
+  onToggleStar?: (itemId: string, starred: boolean) => void
 }
 
 function getMimeIcon(mimeType: string, type: string): string {
@@ -63,7 +66,8 @@ const GridCard = React.memo(function GridCard({
   isRenaming,
   onRenameSubmit,
   onRenameCancel,
-  onContextMenu
+  onContextMenu,
+  onToggleStar
 }: {
   item: DriveItemDTO
   isSelected: boolean
@@ -76,6 +80,7 @@ const GridCard = React.memo(function GridCard({
   onRenameSubmit?: (fileId: string, newName: string) => void
   onRenameCancel?: () => void
   onContextMenu?: (itemId: string, x: number, y: number) => void
+  onToggleStar?: (itemId: string, starred: boolean) => void
 }) {
   const thumbnailUrl = useThumbnail({
     fileId: item.id,
@@ -118,7 +123,7 @@ const GridCard = React.memo(function GridCard({
       role="gridcell"
       tabIndex={isFocused ? 0 : -1}
       aria-selected={isSelected}
-      className={`h-full rounded-xl border transition-all cursor-default select-none flex flex-col overflow-hidden
+      className={`h-full rounded-xl border transition-all cursor-default select-none flex flex-col overflow-hidden group
         ${isSelected
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-600/15 ring-1 ring-blue-400/40'
           : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60'
@@ -147,6 +152,21 @@ const GridCard = React.memo(function GridCard({
         ) : (
           <span className="text-4xl opacity-60">{getMimeIcon(item.mimeType, item.type)}</span>
         )}
+        {/* Star button (top-left overlay) */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleStar?.(item.id, !item.starred)
+          }}
+          className={`absolute top-1.5 left-1.5 p-0.5 rounded transition-colors ${
+            item.starred
+              ? 'text-amber-400 hover:text-amber-500'
+              : 'text-transparent group-hover:text-gray-400/60 dark:group-hover:text-gray-500/60 hover:!text-amber-400'
+          }`}
+          title={item.starred ? 'Unstar' : 'Star'}
+        >
+          <Star size={14} className={item.starred ? 'fill-amber-400' : ''} />
+        </button>
         {/* Status indicators (overlay) */}
         {(isPending || needsUser) && (
           <div className="absolute top-1.5 right-1.5">
@@ -197,7 +217,8 @@ export default function GridView({
   renamingId,
   onRenameSubmit,
   onRenameCancel,
-  onContextMenu
+  onContextMenu,
+  onToggleStar
 }: GridViewProps): React.JSX.Element {
   const parentRef = React.useRef<HTMLDivElement | null>(null)
   const [width, setWidth] = React.useState(800)
@@ -280,6 +301,7 @@ export default function GridView({
                 onRenameSubmit={onRenameSubmit}
                 onRenameCancel={onRenameCancel}
                 onContextMenu={onContextMenu}
+                onToggleStar={onToggleStar}
               />
             </div>
           )

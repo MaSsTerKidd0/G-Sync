@@ -274,6 +274,69 @@ export async function updateFile(opts: {
   return res.json() as Promise<DriveFile>
 }
 
+// ── Phase 10: Download Operations ──
+
+/** Mime types that are Google Workspace docs (cannot be downloaded directly — must be exported). */
+const WORKSPACE_EXPORT_MAP: Record<string, string> = {
+  'application/vnd.google-apps.document': 'application/pdf',
+  'application/vnd.google-apps.spreadsheet': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.google-apps.presentation': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.google-apps.drawing': 'image/png',
+  'application/vnd.google-apps.jam': 'application/pdf'
+}
+
+/** Extension map for exported Workspace files. */
+const EXPORT_EXTENSION_MAP: Record<string, string> = {
+  'application/pdf': '.pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
+  'image/png': '.png'
+}
+
+/**
+ * Check if a MIME type is a Google Workspace type that requires export.
+ */
+export function isWorkspaceMime(mimeType: string): boolean {
+  return mimeType in WORKSPACE_EXPORT_MAP
+}
+
+/**
+ * Get the file extension to append for exported Workspace files.
+ */
+export function getExportExtension(mimeType: string): string {
+  const exportMime = WORKSPACE_EXPORT_MAP[mimeType]
+  if (!exportMime) return ''
+  return EXPORT_EXTENSION_MAP[exportMime] ?? ''
+}
+
+/**
+ * Download raw file content as a Buffer.
+ * For Google Workspace files (Docs/Sheets/Slides), exports to a standard format.
+ */
+export async function downloadFileBuffer(fileId: string, mimeType: string): Promise<Buffer> {
+  const headers = await getAuthHeaders()
+
+  let url: string
+  if (isWorkspaceMime(mimeType)) {
+    const exportMime = WORKSPACE_EXPORT_MAP[mimeType]!
+    const params = new URLSearchParams({ mimeType: exportMime })
+    url = `${DRIVE_BASE}/files/${encodeURIComponent(fileId)}/export?${params}`
+  } else {
+    const params = new URLSearchParams({ alt: 'media', supportsAllDrives: 'true' })
+    url = `${DRIVE_BASE}/files/${encodeURIComponent(fileId)}?${params}`
+  }
+
+  const res = await fetch(url, { headers })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw makeDriveError(res.status, body)
+  }
+
+  const arrayBuf = await res.arrayBuffer()
+  return Buffer.from(arrayBuf)
+}
+
 /**
  * DELETE files.delete — permanent deletion.
  */
