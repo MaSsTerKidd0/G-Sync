@@ -296,6 +296,9 @@ const gsyncApi = {
     stopWorker: (): Promise<void> =>
       ipcRenderer.invoke('ops:stopWorker'),
 
+    clearCompleted: (): Promise<number> =>
+      ipcRenderer.invoke('ops:clearCompleted'),
+
     onOpsChanged: (
       cb: (payload: { type: string; opIds: string[] }) => void
     ): (() => void) => {
@@ -449,6 +452,59 @@ const gsyncApi = {
 
     getAll: (): Promise<Record<string, string>> =>
       ipcRenderer.invoke('settings:getAll')
+  },
+
+  // ── Phase 11: Synced Folders API ──
+
+  folders: {
+    list: (): Promise<Array<{
+      id: string
+      local_path: string
+      drive_folder_id: string | null
+      drive_folder_name: string | null
+      status: string
+      last_sync_ms: number | null
+      last_error: string | null
+      created_at_ms: number
+    }>> => ipcRenderer.invoke('folders:list'),
+
+    add: (): Promise<{
+      success: boolean
+      folder?: {
+        id: string
+        local_path: string
+        status: string
+      }
+      error?: string
+    }> => ipcRenderer.invoke('folders:add'),
+
+    remove: (folderId: string): Promise<void> =>
+      ipcRenderer.invoke('folders:remove', folderId),
+
+    sync: (folderId: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('folders:sync', folderId),
+
+    onStatusChanged: (
+      cb: (payload: { folderId: string; status: string }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: Electron.IpcRendererEvent,
+        payload: { folderId: string; status: string }
+      ): void => cb(payload)
+      ipcRenderer.on('folder:statusChanged', handler)
+      return () => ipcRenderer.removeListener('folder:statusChanged', handler)
+    },
+
+    onSyncProgress: (
+      cb: (payload: { folderId: string; current: number; total: number; fileName: string }) => void
+    ): (() => void) => {
+      const handler = (
+        _e: Electron.IpcRendererEvent,
+        payload: { folderId: string; current: number; total: number; fileName: string }
+      ): void => cb(payload)
+      ipcRenderer.on('folder:syncProgress', handler)
+      return () => ipcRenderer.removeListener('folder:syncProgress', handler)
+    }
   }
 }
 

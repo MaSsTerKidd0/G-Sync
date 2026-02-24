@@ -4,6 +4,7 @@ interface OpsPanelProps {
   onRollback: (opId: string) => Promise<void>
   onCancel: (opId: string) => Promise<void>
   onClose: () => void
+  onClear?: () => void
 }
 
 function opTypeLabel(opType: string): string {
@@ -61,18 +62,32 @@ function getFileName(op: OpRecordBridge): string {
   }
 }
 
-export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose }: OpsPanelProps) {
+export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose, onClear }: OpsPanelProps) {
   // Show only non-succeeded ops, or most recent 20
   const visibleOps = ops.filter((op) => op.status !== 'succeeded').slice(0, 20)
+  const hasCompleted = ops.some((op) => op.status === 'succeeded' || op.status === 'rolled_back')
 
   if (visibleOps.length === 0) {
     return (
       <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Operations</span>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            {hasCompleted && onClear && (
+              <button
+                onClick={onClear}
+                className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              >
+                Clear
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            >
+              Close
+            </button>
+          </div>
         </div>
         <p className="text-xs text-gray-500">No active operations.</p>
       </div>
@@ -83,9 +98,22 @@ export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose }: OpsPan
     <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 max-h-[200px] overflow-auto">
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur">
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Operations ({visibleOps.length})</span>
-        <button onClick={onClose} className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
-          Close
-        </button>
+        <div className="flex items-center gap-2">
+          {hasCompleted && onClear && (
+            <button
+              onClick={onClear}
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            >
+              Clear
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            Close
+          </button>
+        </div>
       </div>
       {visibleOps.map((op) => {
         const badge = statusBadge(op.status)

@@ -192,6 +192,7 @@ interface GsyncApi {
     rollback(opId: string): Promise<void>
     startWorker(): Promise<void>
     stopWorker(): Promise<void>
+    clearCompleted(): Promise<number>
     onOpsChanged(cb: (payload: { type: string; opIds: string[] }) => void): () => void
     onOpsProgress(cb: (payload: { opId: string; opType: string; fileId: string; status: string }) => void): () => void
     onOpsError(cb: (payload: { opId: string; opType: string; fileId: string; code: string; message: string }) => void): () => void

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   HardDrive,
   Sparkles,
@@ -13,7 +13,10 @@ import {
   ChevronDown,
   RefreshCw,
   Folder,
-  FileText
+  FileText,
+  FolderSync,
+  Plus,
+  X
 } from 'lucide-react'
 import { useTheme, type ThemeOption } from '../../context/ThemeContext'
 
@@ -99,6 +102,82 @@ export default function Sidebar({
         .finally(() => setStarredLoading(false))
     }
   }, [starredOpen, isConnected])
+
+  // ── Synced Folders state ──
+  interface SyncedFolderItem {
+    id: string
+    local_path: string
+    status: string
+    last_error: string | null
+  }
+
+  const [syncedFoldersOpen, setSyncedFoldersOpen] = useState(false)
+  const [syncedFolders, setSyncedFolders] = useState<SyncedFolderItem[]>([])
+  const [folderProgress, setFolderProgress] = useState<Record<string, { current: number; total: number; fileName: string }>>({})
+
+  // Fetch synced folders
+  useEffect(() => {
+    if (!isConnected) return
+    window.gsync.folders
+      .list()
+      .then((folders) => setSyncedFolders(folders))
+      .catch(console.error)
+  }, [isConnected])
+
+  // Subscribe to folder status changes
+  useEffect(() => {
+    if (!isConnected) return
+
+    const unsubStatus = window.gsync.folders.onStatusChanged((payload) => {
+      if (payload.status === 'removed') {
+        setSyncedFolders((prev) => prev.filter((f) => f.id !== payload.folderId))
+      } else {
+        setSyncedFolders((prev) =>
+          prev.map((f) => (f.id === payload.folderId ? { ...f, status: payload.status } : f))
+        )
+      }
+    })
+
+    const unsubProgress = window.gsync.folders.onSyncProgress((payload) => {
+      setFolderProgress((prev) => ({
+        ...prev,
+        [payload.folderId]: { current: payload.current, total: payload.total, fileName: payload.fileName }
+      }))
+    })
+
+    return () => {
+      unsubStatus()
+      unsubProgress()
+    }
+  }, [isConnected])
+
+  const handleAddFolder = useCallback(async () => {
+    try {
+      const result = await window.gsync.folders.add()
+      if (result.success && result.folder) {
+        setSyncedFolders((prev) => [...prev, result.folder as SyncedFolderItem])
+      }
+    } catch (err) {
+      console.error('[sidebar] Failed to add folder:', err)
+    }
+  }, [])
+
+  const handleRemoveFolder = useCallback(async (folderId: string) => {
+    try {
+      await window.gsync.folders.remove(folderId)
+      // The status event handler will remove it from state
+    } catch (err) {
+      console.error('[sidebar] Failed to remove folder:', err)
+    }
+  }, [])
+
+  const handleRetryFolder = useCallback(async (folderId: string) => {
+    try {
+      await window.gsync.folders.sync(folderId)
+    } catch (err) {
+      console.error('[sidebar] Failed to retry folder sync:', err)
+    }
+  }, [])
 
   // Refresh starred items when sync updates data
   useEffect(() => {
@@ -197,6 +276,96 @@ export default function Sidebar({
                   </button>
                 ))
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Synced Folders section */}
+      {isConnected && (
+        <div className="px-3 mt-3">
+          <button
+            onClick={() => setSyncedFoldersOpen(!syncedFoldersOpen)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <FolderSync size={16} className="text-blue-500" />
+              <span>Synced Folders</span>
+            </div>
+            <ChevronDown
+              size={14}
+              className={`transition-transform duration-200 ${syncedFoldersOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {syncedFoldersOpen && (
+            <div className="mt-1 space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
+              {syncedFolders.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">
+                  No synced folders
+                </p>
+              ) : (
+                syncedFolders.map((folder) => {
+                  const folderName = folder.local_path.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? 'Folder'
+                  const progress = folderProgress[folder.id]
+                  const statusDot =
+                    folder.status === 'synced' ? 'bg-green-500' :
+                    folder.status === 'syncing' ? 'bg-amber-400 animate-pulse' :
+                    folder.status === 'error' ? 'bg-red-500' :
+                    'bg-gray-400'
+
+                  return (
+                    <div key={folder.id} className="group">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                        <div className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDot}`} />
+                        <Folder size={14} className="text-blue-400 shrink-0" />
+                        <span className="flex-1 text-xs text-gray-600 dark:text-gray-400 truncate" title={folder.local_path}>
+                          {folderName}
+                        </span>
+                        {folder.status === 'error' && (
+                          <button
+                            onClick={() => handleRetryFolder(folder.id)}
+                            className="text-amber-500 hover:text-amber-600 p-0.5"
+                            title={folder.last_error ?? 'Retry sync'}
+                          >
+                            <RefreshCw size={12} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRemoveFolder(folder.id)}
+                          className="text-gray-400 hover:text-red-500 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove synced folder"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                      {/* Progress bar during sync */}
+                      {folder.status === 'syncing' && progress && progress.total > 0 && (
+                        <div className="px-3 pb-1">
+                          <div className="h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                            <div
+                              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                            {progress.current}/{progress.total} — {progress.fileName}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+
+              {/* Add Folder button */}
+              <button
+                onClick={handleAddFolder}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors font-medium"
+              >
+                <Plus size={14} />
+                Add Folder
+              </button>
             </div>
           )}
         </div>

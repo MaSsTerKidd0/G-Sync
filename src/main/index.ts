@@ -80,6 +80,17 @@ import { createBackup, listBackups } from './db/backup'
 import { getSetting, setSetting, getAllSettings, getKeepSignedIn } from './db/settingsStore'
 import { clearTokens } from './auth/tokenStore'
 import { downloadAsZip, type ZipDownloadItem } from './download/zipDownloader'
+import {
+  addSyncedFolder,
+  removeSyncedFolder,
+  listSyncedFolders,
+  getSyncedFolder,
+  updateSyncedFileAfterUpload,
+  listPendingFiles,
+  listConflictFiles
+} from './db/syncedFoldersStore'
+import { folderWatcher } from './sync/folderWatcher'
+import { folderSyncWorker } from './sync/folderSyncWorker'
 
 // Load .env ONCE — try cwd first (dev mode), then app path (production).
 const cwd = config()
@@ -360,6 +371,12 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('ops:stopWorker', () => {
     opsWorker.stop()
+  })
+
+  ipcMain.handle('ops:clearCompleted', () => {
+    const removed = purgeCompletedOps(0) // maxAge=0 clears ALL completed/rolled_back
+    sendToRenderer('ops:changed', { type: 'cleared', opIds: [] })
+    return removed
   })
 
   // ── Phase 5: Cleanup / Smart Tools handlers ──
@@ -664,6 +681,67 @@ function registerIpcHandlers(): void {
       return { success: false, error: message }
     }
   })
+
+  // ── Phase 11: Synced Folders handlers ──
+
+  ipcMain.handle('folders:list', () => {
+    return listSyncedFolders()
+  })
+
+  ipcMain.handle('folders:add', async () => {
+    try {
+      const result = await dialog.showOpenDialog({
+        title: 'Select Folder to Sync',
+        properties: ['openDirectory']
+      })
+
+      if (result.canceled || !result.filePaths[0]) {
+        return { success: false, error: 'cancelled' }
+      }
+
+      const localPath = result.filePaths[0]
+
+      // Check if already synced
+      const existing = listSyncedFolders()
+      if (existing.some((f) => f.local_path === localPath)) {
+        return { success: false, error: 'This folder is already being synced' }
+      }
+
+      const folder = addSyncedFolder(localPath)
+
+      // Start watching + initial sync
+      folderWatcher.watchFolder(folder.id, localPath)
+      // Wait a moment for initial scan, then trigger sync
+      setTimeout(() => {
+        folderSyncWorker.syncFolder(folder.id)
+      }, 2000)
+
+      sendToRenderer('folder:statusChanged', { folderId: folder.id, status: folder.status })
+      return { success: true, folder }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      return { success: false, error: message }
+    }
+  })
+
+  ipcMain.handle('folders:remove', async (_e, folderId: string) => {
+    assertNonEmptyString(folderId, 'folderId')
+    await folderWatcher.unwatchFolder(folderId)
+    removeSyncedFolder(folderId)
+    sendToRenderer('folder:statusChanged', { folderId, status: 'removed' })
+  })
+
+  ipcMain.handle('folders:sync', async (_e, folderId: string) => {
+    assertNonEmptyString(folderId, 'folderId')
+    const folder = getSyncedFolder(folderId)
+    if (!folder) return { success: false, error: 'Folder not found' }
+
+    // Run sync in background (fire-and-forget for the IPC handler)
+    folderSyncWorker.syncFolder(folderId).catch((err) => {
+      console.error('[ipc] folders:sync error:', err)
+    })
+    return { success: true }
+  })
 }
 
 // Forward sync events to the renderer via the safe sender
@@ -710,6 +788,50 @@ function wireOpsWorkerEvents(): void {
   })
 }
 
+// Phase 11: Wire folder watcher + sync worker events to the renderer
+function wireFolderSyncEvents(): void {
+  folderWatcher.on('folder:fileChanged', (payload) => {
+    sendToRenderer('folder:fileChanged', payload)
+    // Auto-trigger sync after file change (debounced by the watcher already)
+    const { folderId } = payload as { folderId: string }
+    if (!folderSyncWorker.isSyncing(folderId)) {
+      // Small delay to batch multiple rapid changes
+      setTimeout(() => {
+        folderSyncWorker.syncFolder(folderId).catch(console.error)
+      }, 1000)
+    }
+  })
+
+  folderWatcher.on('folder:statusChanged', (payload) => {
+    sendToRenderer('folder:statusChanged', payload)
+  })
+
+  folderWatcher.on('folder:error', (payload) => {
+    sendToRenderer('folder:error', payload)
+  })
+
+  folderSyncWorker.on('folder:statusChanged', (payload) => {
+    sendToRenderer('folder:statusChanged', payload)
+  })
+
+  folderSyncWorker.on('folder:syncProgress', (payload) => {
+    sendToRenderer('folder:syncProgress', payload)
+  })
+}
+
+// Phase 11: Resume watching previously synced folders on startup
+function resumeFolderWatchers(): void {
+  try {
+    const folders = listSyncedFolders()
+    for (const folder of folders) {
+      folderWatcher.watchFolder(folder.id, folder.local_path)
+      console.log(`[startup] Resumed watching: ${folder.local_path}`)
+    }
+  } catch (err) {
+    console.warn('[startup] Failed to resume folder watchers:', err)
+  }
+}
+
 async function tryRefreshOnStartup(): Promise<void> {
   const tokens = loadTokens()
   if (tokens && tokens.refresh_token && isTokenExpired(tokens)) {
@@ -747,11 +869,15 @@ app.whenReady().then(async () => {
   registerIpcHandlers()
   wireSyncEvents()
   wireOpsWorkerEvents()
+  wireFolderSyncEvents()
 
   // Phase 4: initialize the monotonic user_seq from DB
   initUserSeq()
   // Start the background ops worker
   opsWorker.start()
+
+  // Phase 11: Resume folder watchers for previously synced folders
+  resumeFolderWatchers()
 
   await tryRefreshOnStartup()
   createWindow()
@@ -783,6 +909,8 @@ app.on('before-quit', (event) => {
   opsWorker.removeAllListeners()
   syncEngine.stop()
   syncEngine.removeAllListeners()
+  folderWatcher.unwatchAll().catch(() => {}) // best-effort cleanup
+  folderSyncWorker.removeAllListeners()
 
   try {
     purgeCompletedOps()

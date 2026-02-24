@@ -25,7 +25,7 @@ import {
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
-import { Search, Folder, Loader2, Download, X } from 'lucide-react'
+import { Search, Folder, Download, X } from 'lucide-react'
 import type {
   ViewMode,
   SortBy,
@@ -129,7 +129,7 @@ export default function ExplorerRoot({
   })
 
   // -- Phase 4: Ops status --
-  const { counts, recentOps, pendingFileIds, needsUserFileIds, retry, rollback, cancel } = useOpsStatus()
+  const { counts, recentOps, pendingFileIds, needsUserFileIds, retry, rollback, cancel, clearCompleted } = useOpsStatus()
   const [opsPanelOpen, setOpsPanelOpen] = useState(false)
 
   // -- Phase 4: Drag-and-drop state --
@@ -475,9 +475,29 @@ export default function ExplorerRoot({
         {/* -- Content -- */}
         <div className="flex-1 min-h-0 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900/50 flex flex-col">
           {loading && items.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-500">
-              <Loader2 className="animate-spin h-5 w-5 mr-2" />
-              Loading...
+            <div className="flex flex-col h-full animate-pulse">
+              {/* Skeleton header */}
+              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+                <div className="w-7" />
+                <div className="h-3 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="flex-1" />
+                <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 w-10 rounded bg-gray-200 dark:bg-gray-700" />
+              </div>
+              {/* Skeleton rows */}
+              <div className="flex-1 overflow-hidden">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 h-[44px]">
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700" style={{ width: `${35 + (i % 5) * 12}%` }} />
+                    </div>
+                    <div className="w-5" />
+                    <div className="w-16 h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="w-12 h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                  </div>
+                ))}
+              </div>
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 gap-3">
@@ -526,6 +546,7 @@ export default function ExplorerRoot({
               onRollback={rollback}
               onCancel={cancel}
               onClose={() => setOpsPanelOpen(false)}
+              onClear={clearCompleted}
             />
           )}
         </div>

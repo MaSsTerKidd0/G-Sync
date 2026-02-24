@@ -287,8 +287,14 @@ export default function ListView({
                     transform: `translateY(${vItem.start}px)`
                   }}
                 >
-                  <div className="flex items-center h-full px-4 text-sm text-gray-500">
-                    Loading...
+                  <div className="flex items-center gap-3 px-4 h-full animate-pulse">
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700" style={{ width: `${40 + (vItem.index % 4) * 10}%` }} />
+                    </div>
+                    <div className="w-5" />
+                    <div className="w-16 h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="w-12 h-3 rounded bg-gray-200 dark:bg-gray-700" />
                   </div>
                 </div>
               )

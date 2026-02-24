@@ -8,6 +8,7 @@ export interface OpsStatusState {
   retry: (opId: string) => Promise<void>
   rollback: (opId: string) => Promise<void>
   cancel: (opId: string) => Promise<void>
+  clearCompleted: () => Promise<void>
 }
 
 export function useOpsStatus(): OpsStatusState {
@@ -68,5 +69,9 @@ export function useOpsStatus(): OpsStatusState {
     await window.gsync.ops.cancel(opId)
   }, [])
 
-  return { counts, recentOps, pendingFileIds, needsUserFileIds, retry, rollback, cancel }
+  const clearCompleted = useCallback(async () => {
+    await window.gsync.ops.clearCompleted()
+  }, [])
+
+  return { counts, recentOps, pendingFileIds, needsUserFileIds, retry, rollback, cancel, clearCompleted }
 }

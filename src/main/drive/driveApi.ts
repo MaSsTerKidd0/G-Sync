@@ -355,3 +355,141 @@ export async function deleteFile(fileId: string): Promise<void> {
     throw makeDriveError(res.status, body)
   }
 }
+
+// ── Phase 11: Folder Sync Upload Operations ──
+
+const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3'
+
+/**
+ * Create a folder on Google Drive.
+ */
+export async function createDriveFolder(name: string, parentId?: string): Promise<DriveFile> {
+  const headers = await getAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+
+  const body: Record<string, unknown> = {
+    name,
+    mimeType: 'application/vnd.google-apps.folder'
+  }
+  if (parentId) body.parents = [parentId]
+
+  const qs = new URLSearchParams({
+    fields: FILE_FIELDS,
+    supportsAllDrives: 'true'
+  }).toString()
+
+  const res = await fetch(`${DRIVE_BASE}/files?${qs}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text()
+    throw makeDriveError(res.status, errBody)
+  }
+
+  return res.json() as Promise<DriveFile>
+}
+
+/**
+ * Upload a new file to Google Drive using multipart upload.
+ */
+export async function uploadFile(opts: {
+  name: string
+  parentId: string
+  mimeType: string
+  buffer: Buffer
+}): Promise<DriveFile> {
+  const headers = await getAuthHeaders()
+
+  const boundary = `----gsync_boundary_${Date.now()}`
+  const metadata = JSON.stringify({
+    name: opts.name,
+    parents: [opts.parentId]
+  })
+
+  // Build multipart body
+  const parts: Buffer[] = [
+    Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+    Buffer.from(`--${boundary}\r\nContent-Type: ${opts.mimeType}\r\n\r\n`),
+    opts.buffer,
+    Buffer.from(`\r\n--${boundary}--`)
+  ]
+  const body = Buffer.concat(parts)
+
+  headers['Content-Type'] = `multipart/related; boundary=${boundary}`
+
+  const qs = new URLSearchParams({
+    uploadType: 'multipart',
+    fields: FILE_FIELDS,
+    supportsAllDrives: 'true'
+  }).toString()
+
+  const res = await fetch(`${DRIVE_UPLOAD_BASE}/files?${qs}`, {
+    method: 'POST',
+    headers,
+    body
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text()
+    throw makeDriveError(res.status, errBody)
+  }
+
+  return res.json() as Promise<DriveFile>
+}
+
+/**
+ * Update an existing file's content on Google Drive using multipart upload.
+ */
+export async function updateFileContent(opts: {
+  fileId: string
+  mimeType: string
+  buffer: Buffer
+}): Promise<DriveFile> {
+  const headers = await getAuthHeaders()
+
+  const boundary = `----gsync_boundary_${Date.now()}`
+  const metadata = JSON.stringify({})
+
+  // Build multipart body
+  const parts: Buffer[] = [
+    Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n`),
+    Buffer.from(`--${boundary}\r\nContent-Type: ${opts.mimeType}\r\n\r\n`),
+    opts.buffer,
+    Buffer.from(`\r\n--${boundary}--`)
+  ]
+  const body = Buffer.concat(parts)
+
+  headers['Content-Type'] = `multipart/related; boundary=${boundary}`
+
+  const qs = new URLSearchParams({
+    uploadType: 'multipart',
+    fields: FILE_FIELDS,
+    supportsAllDrives: 'true'
+  }).toString()
+
+  const res = await fetch(`${DRIVE_UPLOAD_BASE}/files/${encodeURIComponent(opts.fileId)}?${qs}`, {
+    method: 'PATCH',
+    headers,
+    body
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text()
+    throw makeDriveError(res.status, errBody)
+  }
+
+  return res.json() as Promise<DriveFile>
+}
+
+/**
+ * Get metadata for a single file on Google Drive (used for conflict detection).
+ */
+export async function getFileMetadata(fileId: string): Promise<DriveFile> {
+  return driveGet<DriveFile>(`/files/${encodeURIComponent(fileId)}`, {
+    fields: FILE_FIELDS,
+    supportsAllDrives: 'true'
+  })
+}

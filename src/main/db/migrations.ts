@@ -23,6 +23,9 @@ export function runMigrations(): void {
   if (currentVersion < 6) {
     migrateV6()
   }
+  if (currentVersion < 7) {
+    migrateV7()
+  }
 
   console.log('[db] Migrations complete — schema version:', db.pragma('user_version', { simple: true }))
 }
@@ -425,4 +428,57 @@ function migrateV6(): void {
   })()
 
   console.log('[db] Migration v6 applied')
+}
+
+function migrateV7(): void {
+  const db = getDb()
+  console.log('[db] Applying migration v7: synced_folders + synced_files tables')
+
+  db.transaction(() => {
+    // ── synced_folders: tracks local folders being synced to Google Drive ──
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS synced_folders (
+        id                TEXT PRIMARY KEY,
+        local_path        TEXT NOT NULL UNIQUE,
+        drive_folder_id   TEXT,
+        drive_folder_name TEXT,
+        status            TEXT NOT NULL DEFAULT 'idle',
+        last_sync_ms      INTEGER,
+        last_error        TEXT,
+        created_at_ms     INTEGER NOT NULL
+      )
+    `)
+
+    // ── synced_files: individual file sync tracking per folder ──
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS synced_files (
+        id                TEXT PRIMARY KEY,
+        folder_id         TEXT NOT NULL,
+        relative_path     TEXT NOT NULL,
+        local_hash        TEXT,
+        local_modified_ms INTEGER,
+        local_size_bytes  INTEGER,
+        drive_file_id     TEXT,
+        drive_modified_ms INTEGER,
+        drive_hash        TEXT,
+        sync_status       TEXT NOT NULL DEFAULT 'pending',
+        last_error        TEXT,
+        UNIQUE(folder_id, relative_path),
+        FOREIGN KEY (folder_id) REFERENCES synced_folders(id) ON DELETE CASCADE
+      )
+    `)
+
+    // ── Indexes ──
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_synced_files_folder
+      ON synced_files(folder_id);
+
+      CREATE INDEX IF NOT EXISTS idx_synced_files_status
+      ON synced_files(sync_status);
+    `)
+
+    db.pragma('user_version = 7')
+  })()
+
+  console.log('[db] Migration v7 applied')
 }

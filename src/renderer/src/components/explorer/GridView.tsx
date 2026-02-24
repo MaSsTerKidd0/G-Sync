@@ -272,8 +272,12 @@ export default function GridView({
                   transform: `translate(${x}px, ${y}px)`
                 }}
               >
-                <div className="h-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/30 flex items-center justify-center text-sm text-gray-500">
-                  Loading...
+                <div className="h-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 flex flex-col overflow-hidden animate-pulse">
+                  <div className="flex-1 bg-gray-100 dark:bg-gray-800/30" />
+                  <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-700/50 space-y-1.5">
+                    <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-3/4" />
+                    <div className="h-2.5 rounded bg-gray-200 dark:bg-gray-700 w-1/3" />
+                  </div>
                 </div>
               </div>
             )
