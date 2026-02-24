@@ -387,3 +387,26 @@ export function getStarredItems(limit = 50): DriveItemRow[] {
     )
     .all(limit) as DriveItemRow[]
 }
+
+/**
+ * Count items currently in the trash (not permanently removed).
+ */
+export function getTrashedItemCount(): number {
+  const db = getDb()
+  const row = db
+    .prepare('SELECT COUNT(*) as cnt FROM drive_items WHERE trashed = 1 AND is_removed = 0')
+    .get() as { cnt: number }
+  return row.cnt
+}
+
+/**
+ * Optimistically mark all trashed items as permanently removed.
+ * Called after Drive API emptyTrash() succeeds for immediate UI feedback.
+ */
+export function markAllTrashedAsRemoved(): void {
+  const db = getDb()
+  const now = Date.now()
+  db.prepare(
+    `UPDATE drive_items SET is_removed = 1, removed_time_ms = ? WHERE trashed = 1 AND is_removed = 0`
+  ).run(now)
+}

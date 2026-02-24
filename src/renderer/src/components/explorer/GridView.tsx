@@ -125,12 +125,12 @@ const GridCard = React.memo(function GridCard({
       aria-selected={isSelected}
       className={`h-full rounded-xl border transition-all cursor-default select-none flex flex-col overflow-hidden group
         ${isSelected
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-600/15 ring-1 ring-blue-400/40'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800/60'
+          ? 'border-g-primary bg-g-primary/8 dark:bg-g-primary-dark/15 ring-1 ring-g-primary/40'
+          : 'border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-btn-secondary-dark/40 hover:border-g-text-disabled dark:hover:border-g-text-disabled-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark/60'
         }
-        ${isFocused ? 'ring-2 ring-blue-400/60' : ''}
+        ${isFocused ? 'ring-2 ring-g-primary/40 dark:ring-g-primary-dark/40' : ''}
         ${isDragging ? 'opacity-30' : ''}
-        ${isOver && item.type === 'folder' ? 'border-blue-400 bg-blue-50 dark:bg-blue-600/20 ring-2 ring-blue-400/50' : ''}
+        ${isOver && item.type === 'folder' ? 'border-g-primary dark:border-g-primary-dark bg-g-primary/8 dark:bg-g-primary-dark/15 ring-2 ring-g-primary/40' : ''}
         ${item.type === 'folder' ? 'cursor-pointer' : ''}
       `}
       onClick={(e) => onItemClick(item.id, e)}
@@ -141,7 +141,7 @@ const GridCard = React.memo(function GridCard({
       }}
     >
       {/* Thumbnail area */}
-      <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-gray-800/30 min-h-0 relative">
+      <div className="flex-1 flex items-center justify-center bg-g-surface dark:bg-g-btn-secondary-dark/30 min-h-0 relative">
         {thumbnailUrl ? (
           <img
             src={thumbnailUrl}
@@ -160,31 +160,31 @@ const GridCard = React.memo(function GridCard({
           }}
           className={`absolute top-1.5 left-1.5 p-0.5 rounded transition-colors ${
             item.starred
-              ? 'text-amber-400 hover:text-amber-500'
-              : 'text-transparent group-hover:text-gray-400/60 dark:group-hover:text-gray-500/60 hover:!text-amber-400'
+              ? 'text-g-accent hover:text-g-accent-dark'
+              : 'text-transparent group-hover:text-g-text-disabled/60 dark:group-hover:text-g-text-disabled-dark/60 hover:!text-g-accent'
           }`}
           title={item.starred ? 'Unstar' : 'Star'}
         >
-          <Star size={14} className={item.starred ? 'fill-amber-400' : ''} />
+          <Star size={14} className={item.starred ? 'fill-g-accent' : ''} />
         </button>
         {/* Status indicators (overlay) */}
         {(isPending || needsUser) && (
           <div className="absolute top-1.5 right-1.5">
             {isPending && (
-              <svg className="animate-spin h-4 w-4 text-blue-400" viewBox="0 0 24 24" fill="none">
+              <svg className="animate-spin h-4 w-4 text-g-primary dark:text-g-primary-dark" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
             )}
             {needsUser && (
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-500 text-[10px] font-bold text-gray-900">!</span>
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-g-accent text-[10px] font-bold text-g-text">!</span>
             )}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-700/50">
+      <div className="px-3 py-2 border-t border-g-border/50 dark:border-g-border-dark/50">
         {isRenaming ? (
           <InlineRename
             currentName={item.name}
@@ -192,11 +192,11 @@ const GridCard = React.memo(function GridCard({
             onCancel={() => onRenameCancel?.()}
           />
         ) : (
-          <div className="text-xs font-medium text-gray-800 dark:text-gray-200 truncate" title={item.name}>
+          <div className="text-xs font-medium text-g-text dark:text-g-text-dark truncate" title={item.name}>
             {item.name}
           </div>
         )}
-        <div className="text-[10px] text-gray-500 mt-0.5">
+        <div className="text-[10px] text-g-text-secondary mt-0.5">
           {item.type === 'folder' ? 'Folder' : formatBytes(item.sizeBytes)}
         </div>
       </div>
@@ -272,11 +272,11 @@ export default function GridView({
                   transform: `translate(${x}px, ${y}px)`
                 }}
               >
-                <div className="h-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/40 flex flex-col overflow-hidden animate-pulse">
-                  <div className="flex-1 bg-gray-100 dark:bg-gray-800/30" />
-                  <div className="px-3 py-2 border-t border-gray-100 dark:border-gray-700/50 space-y-1.5">
-                    <div className="h-3 rounded bg-gray-200 dark:bg-gray-700 w-3/4" />
-                    <div className="h-2.5 rounded bg-gray-200 dark:bg-gray-700 w-1/3" />
+                <div className="h-full rounded-xl border border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-btn-secondary-dark/40 flex flex-col overflow-hidden animate-pulse">
+                  <div className="flex-1 bg-g-surface dark:bg-g-btn-secondary-dark/30" />
+                  <div className="px-3 py-2 border-t border-g-border/50 dark:border-g-border-dark/50 space-y-1.5">
+                    <div className="h-3 rounded bg-g-border dark:bg-g-border-dark w-3/4" />
+                    <div className="h-2.5 rounded bg-g-border dark:bg-g-border-dark w-1/3" />
                   </div>
                 </div>
               </div>

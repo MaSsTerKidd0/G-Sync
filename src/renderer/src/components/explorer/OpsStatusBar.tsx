@@ -12,10 +12,10 @@ export function OpsStatusBar({ counts, onTogglePanel }: OpsStatusBarProps) {
   return (
     <button
       onClick={onTogglePanel}
-      className="flex items-center gap-3 px-3 py-1.5 text-xs border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800/80 transition w-full text-left"
+      className="flex items-center gap-3 px-3 py-1.5 text-xs border-t border-g-border dark:border-g-border-dark bg-g-surface dark:bg-g-btn-secondary-dark/50 hover:bg-g-btn-secondary dark:hover:bg-g-btn-secondary-dark/80 transition w-full text-left"
     >
       {syncing > 0 && (
-        <span className="flex items-center gap-1.5 text-blue-400">
+        <span className="flex items-center gap-1.5 text-g-primary dark:text-g-primary-dark">
           <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -24,12 +24,12 @@ export function OpsStatusBar({ counts, onTogglePanel }: OpsStatusBarProps) {
         </span>
       )}
       {failed > 0 && (
-        <span className="flex items-center gap-1 text-amber-400">
+        <span className="flex items-center gap-1 text-g-accent">
           <span className="font-bold">!</span>
           {failed} failed
         </span>
       )}
-      <span className="ml-auto text-gray-500">Click to view details</span>
+      <span className="ml-auto text-g-text-secondary">Click to view details</span>
     </button>
   )
 }

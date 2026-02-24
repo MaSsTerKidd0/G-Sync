@@ -40,7 +40,7 @@ src/
 
 ## Key Patterns
 - **IPC bridge**: All renderer ↔ main communication through `window.gsync.*` (typed in preload/index.ts)
-- **DB migrations**: Incremental `migrateV1()..migrateV6()` in migrations.ts; bump `user_version` pragma
+- **DB migrations**: Incremental `migrateV1()..migrateV7()` in migrations.ts; bump `user_version` pragma
 - **Settings KV store**: `settings` table with `getSetting(key)`/`setSetting(key,val)`; defaults in DEFAULTS
 - **Sync pipeline**: `syncEngine.start()` → snapshot (files.list) → catchup (changes.list) → incremental polling
 - **Ops queue**: Durable pending_ops table, background worker with retry/backoff, optimistic UI updates
@@ -57,7 +57,9 @@ npm run dev                      # Dev mode with HMR
 ```
 
 ## Current Version: 1.0.0
-Phases 1-10 complete. See TASKS.md for current session work.
+Phases 1-12 complete. See TASKS.md for current session work.
+- Phase 11: Skeleton loaders, synced folder implementation (chokidar + Drive upload)
+- Phase 12: Trash-first delete flow, Trash view, capability guards (canDelete/canTrash), Empty Trash
 
 ## Coding Standards
 - TypeScript strict mode; no `any` unless unavoidable

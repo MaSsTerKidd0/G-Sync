@@ -6,7 +6,7 @@ import { config } from 'dotenv'
 import icon from '../../resources/icon.png?asset'
 import { startLogin, getAuthStatus, disconnect, refreshAccessToken } from './auth/googleOAuth'
 import { loadTokens, isTokenExpired, getTokenSecurityInfo } from './auth/tokenStore'
-import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension } from './drive/driveApi'
+import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension, emptyTrash } from './drive/driveApi'
 import { initDatabase, closeDatabase } from './db/database'
 import { runMigrations } from './db/migrations'
 import { syncEngine } from './sync/syncEngine'
@@ -21,6 +21,8 @@ import {
   getStarredItems,
   updateStarred,
   listFolderPage,
+  getTrashedItemCount,
+  markAllTrashedAsRemoved,
   type SortBy,
   type SortDir
 } from './db/queryLayer'
@@ -377,6 +379,16 @@ function registerIpcHandlers(): void {
     const removed = purgeCompletedOps(0) // maxAge=0 clears ALL completed/rolled_back
     sendToRenderer('ops:changed', { type: 'cleared', opIds: [] })
     return removed
+  })
+
+  ipcMain.handle('ops:emptyTrash', async () => {
+    await emptyTrash()
+    markAllTrashedAsRemoved()
+    sendToRenderer('explorer:dbChanged', { reason: 'dbChanged' })
+  })
+
+  ipcMain.handle('db:trashedCount', () => {
+    return getTrashedItemCount()
   })
 
   // ── Phase 5: Cleanup / Smart Tools handlers ──

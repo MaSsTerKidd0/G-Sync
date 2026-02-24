@@ -136,10 +136,10 @@ const ListRow = React.memo(function ListRow({
       tabIndex={isFocused ? 0 : -1}
       aria-selected={isSelected}
       className={`flex items-center gap-3 px-4 h-full select-none cursor-default transition-colors group
-        ${isSelected ? 'bg-blue-50 dark:bg-blue-600/20 text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/30'}
-        ${isFocused ? 'ring-1 ring-inset ring-blue-400/60' : ''}
+        ${isSelected ? 'bg-g-primary/8 dark:bg-g-primary-dark/15 text-g-text dark:text-g-text-dark' : 'text-g-text dark:text-g-text-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark/30'}
+        ${isFocused ? 'ring-1 ring-inset ring-g-primary/40 dark:ring-g-primary-dark/40' : ''}
         ${isDragging ? 'opacity-30' : ''}
-        ${isOver && item.type === 'folder' ? 'bg-blue-50 dark:bg-blue-600/15 border-l-2 border-blue-500 dark:border-blue-400' : ''}
+        ${isOver && item.type === 'folder' ? 'bg-g-primary/8 dark:bg-g-primary-dark/10 border-l-2 border-g-primary dark:border-g-primary-dark' : ''}
         ${item.type === 'folder' ? 'cursor-pointer' : ''}
       `}
       onClick={(e) => onItemClick(item.id, e)}
@@ -175,13 +175,13 @@ const ListRow = React.memo(function ListRow({
           <span className="truncate">{item.name}</span>
         )}
         {isPending && (
-          <svg className="flex-shrink-0 animate-spin h-3.5 w-3.5 text-blue-400" viewBox="0 0 24 24" fill="none">
+          <svg className="flex-shrink-0 animate-spin h-3.5 w-3.5 text-g-primary dark:text-g-primary-dark" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         )}
         {needsUser && (
-          <span className="flex-shrink-0 text-amber-400 text-xs font-bold" title="Action needed">!</span>
+          <span className="flex-shrink-0 text-g-accent text-xs font-bold" title="Action needed">!</span>
         )}
       </div>
 
@@ -193,21 +193,21 @@ const ListRow = React.memo(function ListRow({
         }}
         className={`flex-shrink-0 p-0.5 rounded transition-colors ${
           item.starred
-            ? 'text-amber-400 hover:text-amber-500'
-            : 'text-transparent group-hover:text-gray-300 dark:group-hover:text-gray-600 hover:!text-amber-400'
+            ? 'text-g-accent hover:text-g-accent-dark'
+            : 'text-transparent group-hover:text-g-border dark:group-hover:text-g-border-dark hover:!text-g-accent'
         }`}
         title={item.starred ? 'Unstar' : 'Star'}
       >
-        <Star size={14} className={item.starred ? 'fill-amber-400' : ''} />
+        <Star size={14} className={item.starred ? 'fill-g-accent' : ''} />
       </button>
 
       {/* Modified */}
-      <div className="flex-shrink-0 w-28 text-xs text-gray-500 dark:text-gray-400 text-right">
+      <div className="flex-shrink-0 w-28 text-xs text-g-text-secondary dark:text-g-text-secondary-dark text-right">
         {formatDate(item.modifiedTimeMs)}
       </div>
 
       {/* Size */}
-      <div className="flex-shrink-0 w-20 text-xs text-gray-500 dark:text-gray-400 text-right">
+      <div className="flex-shrink-0 w-20 text-xs text-g-text-secondary dark:text-g-text-secondary-dark text-right">
         {item.type === 'folder' ? '\u2014' : formatBytes(item.sizeBytes)}
       </div>
     </div>
@@ -251,7 +251,7 @@ export default function ListView({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="flex items-center gap-3 px-4 py-2 text-xs uppercase tracking-wider text-g-text-secondary dark:text-g-text-secondary-dark bg-g-surface dark:bg-g-btn-secondary-dark/70 border-b border-g-border dark:border-g-border-dark flex-shrink-0">
         <div className="w-7" />
         <div className="flex-1 min-w-0">Name</div>
         <div className="w-5" />
@@ -288,13 +288,13 @@ export default function ListView({
                   }}
                 >
                   <div className="flex items-center gap-3 px-4 h-full animate-pulse">
-                    <div className="flex-shrink-0 w-7 h-7 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-g-border dark:bg-g-border-dark" />
                     <div className="flex-1 min-w-0">
-                      <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700" style={{ width: `${40 + (vItem.index % 4) * 10}%` }} />
+                      <div className="h-3.5 rounded bg-g-border dark:bg-g-border-dark" style={{ width: `${40 + (vItem.index % 4) * 10}%` }} />
                     </div>
                     <div className="w-5" />
-                    <div className="w-16 h-3 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="w-12 h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="w-16 h-3 rounded bg-g-border dark:bg-g-border-dark" />
+                    <div className="w-12 h-3 rounded bg-g-border dark:bg-g-border-dark" />
                   </div>
                 </div>
               )

@@ -45,15 +45,15 @@ export function ConfirmDialog({
 
       {/* Dialog */}
       <div
-        className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4"
+        className="relative bg-g-bg dark:bg-g-surface-dark border border-g-border dark:border-g-border-dark rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">{message}</p>
+        <h3 className="text-base font-semibold text-g-text dark:text-g-text-dark mb-2">{title}</h3>
+        <p className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark mb-6">{message}</p>
         <div className="flex justify-end gap-3">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition"
+            className="px-4 py-2 text-sm text-g-text dark:text-g-text-dark bg-g-btn-secondary dark:bg-g-btn-secondary-dark hover:bg-g-border dark:hover:bg-g-border-dark rounded-lg transition"
           >
             Cancel
           </button>
@@ -62,8 +62,8 @@ export function ConfirmDialog({
             onClick={onConfirm}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
               destructive
-                ? 'text-white bg-red-600 hover:bg-red-500'
-                : 'text-white bg-blue-600 hover:bg-blue-500'
+                ? 'text-white bg-g-secondary hover:bg-g-secondary/90'
+                : 'text-white bg-g-primary hover:bg-g-primary/90'
             }`}
           >
             {confirmLabel}

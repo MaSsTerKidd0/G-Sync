@@ -356,6 +356,22 @@ export async function deleteFile(fileId: string): Promise<void> {
   }
 }
 
+/**
+ * DELETE files/trash — permanently delete ALL trashed files.
+ * Equivalent to "Empty Trash" in Google Drive.
+ */
+export async function emptyTrash(): Promise<void> {
+  const headers = await getAuthHeaders()
+  const url = `${DRIVE_BASE}/files/trash`
+
+  const res = await fetch(url, { method: 'DELETE', headers })
+
+  if (!res.ok) {
+    const body = await res.text()
+    throw makeDriveError(res.status, body)
+  }
+}
+
 // ── Phase 11: Folder Sync Upload Operations ──
 
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3'

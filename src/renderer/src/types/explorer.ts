@@ -23,6 +23,9 @@ export interface DriveItemDTO {
   trashed: boolean
   isRemoved: boolean
 
+  canDelete: boolean
+  canTrash: boolean
+
   iconLink?: string | null
   hasThumbnail?: boolean | null
   thumbnailVersion?: string | null
@@ -89,6 +92,8 @@ export interface DriveItemRow {
   has_thumbnail: number
   thumbnail_version: string | null
   is_removed: number
+  can_delete: number | null
+  can_trash: number | null
 }
 
 /**
@@ -111,6 +116,9 @@ export function rowToDTO(row: DriveItemRow): DriveItemDTO {
     starred: row.starred === 1,
     trashed: row.trashed === 1,
     isRemoved: row.is_removed === 1,
+
+    canDelete: row.can_delete === 1,
+    canTrash: row.can_trash === 1,
 
     iconLink: row.icon_link,
     hasThumbnail: row.has_thumbnail === 1,

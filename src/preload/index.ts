@@ -212,7 +212,9 @@ const gsyncApi = {
     starredItems: (limit?: number): Promise<DriveItemRow[]> =>
       ipcRenderer.invoke('db:starredItems', limit),
     updateStarred: (fileId: string, starred: boolean): Promise<void> =>
-      ipcRenderer.invoke('db:updateStarred', { fileId, starred })
+      ipcRenderer.invoke('db:updateStarred', { fileId, starred }),
+    trashedCount: (): Promise<number> =>
+      ipcRenderer.invoke('db:trashedCount')
   },
 
   // ── Phase 3: Explorer API ──
@@ -298,6 +300,9 @@ const gsyncApi = {
 
     clearCompleted: (): Promise<number> =>
       ipcRenderer.invoke('ops:clearCompleted'),
+
+    emptyTrash: (): Promise<void> =>
+      ipcRenderer.invoke('ops:emptyTrash'),
 
     onOpsChanged: (
       cb: (payload: { type: string; opIds: string[] }) => void

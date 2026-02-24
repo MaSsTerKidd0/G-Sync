@@ -16,11 +16,12 @@ import {
   FileText,
   FolderSync,
   Plus,
-  X
+  X,
+  Trash2
 } from 'lucide-react'
 import { useTheme, type ThemeOption } from '../../context/ThemeContext'
 
-type ActiveView = 'explorer' | 'smart-tools' | 'settings'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash'
 
 interface SidebarProps {
   activeView: ActiveView
@@ -39,6 +40,7 @@ interface SidebarProps {
 
 const NAV_ITEMS: Array<{ id: ActiveView; label: string; icon: typeof HardDrive }> = [
   { id: 'explorer', label: 'My Drive', icon: HardDrive },
+  { id: 'trash', label: 'Trash', icon: Trash2 },
   { id: 'smart-tools', label: 'Smart Tools', icon: Sparkles },
   { id: 'settings', label: 'Settings', icon: Settings }
 ]
@@ -57,10 +59,10 @@ const phaseLabel: Record<string, string> = {
 }
 
 const phaseColor: Record<string, string> = {
-  idle: 'bg-gray-400',
-  snapshot: 'bg-yellow-400 animate-pulse',
+  idle: 'bg-g-text-disabled dark:bg-g-text-disabled-dark',
+  snapshot: 'bg-g-accent animate-pulse',
   catchup: 'bg-orange-400 animate-pulse',
-  incremental: 'bg-green-500'
+  incremental: 'bg-g-success'
 }
 
 interface StarredItem {
@@ -86,6 +88,23 @@ export default function Sidebar({
 }: SidebarProps) {
   const { theme, setTheme } = useTheme()
   const isConnected = authStatus === 'connected'
+
+  // ── Trash count ──
+  const [trashedCount, setTrashedCount] = useState(0)
+
+  useEffect(() => {
+    if (!isConnected) return
+    window.gsync.db.trashedCount().then(setTrashedCount).catch(console.error)
+  }, [isConnected])
+
+  // Refresh trash count when DB changes
+  useEffect(() => {
+    if (!isConnected) return
+    const unsub = window.gsync.explorer.onDbChanged(() => {
+      window.gsync.db.trashedCount().then(setTrashedCount).catch(console.error)
+    })
+    return unsub
+  }, [isConnected])
 
   // ── Starred section state ──
   const [starredOpen, setStarredOpen] = useState(false)
@@ -192,14 +211,14 @@ export default function Sidebar({
   }, [starredOpen, isConnected])
 
   return (
-    <aside className="w-64 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col shrink-0">
+    <aside className="w-64 border-r border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-surface-dark flex flex-col shrink-0">
       {/* Logo */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shadow-md">
+        <div className="w-8 h-8 bg-g-primary rounded-lg flex items-center justify-center shadow-md">
           <HardDrive className="text-white" size={18} />
         </div>
-        <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-gray-100">
-          <span className="text-blue-500">G</span>-Sync
+        <span className="font-bold text-lg tracking-tight text-g-text dark:text-g-text-dark">
+          <span className="text-g-primary dark:text-g-primary-dark">G</span>-Sync
         </span>
       </div>
 
@@ -215,17 +234,22 @@ export default function Sidebar({
               disabled={disabled}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 text-sm ${
                 active
-                  ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium'
+                  ? 'bg-g-primary/8 dark:bg-g-primary-dark/10 text-g-primary dark:text-g-primary-dark font-medium'
                   : disabled
-                    ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    ? 'text-g-text-disabled dark:text-g-text-disabled-dark cursor-not-allowed'
+                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark'
               }`}
             >
               <Icon
                 size={18}
-                className={active ? 'text-blue-600 dark:text-blue-400' : disabled ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'}
+                className={active ? 'text-g-primary dark:text-g-primary-dark' : disabled ? 'text-g-text-disabled dark:text-g-text-disabled-dark' : 'text-g-text-disabled dark:text-g-text-secondary-dark'}
               />
-              {label}
+              <span className="flex-1">{label}</span>
+              {id === 'trash' && trashedCount > 0 && !disabled && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-g-btn-secondary dark:bg-g-btn-secondary-dark text-g-text-secondary dark:text-g-text-secondary-dark">
+                  {trashedCount > 999 ? '999+' : trashedCount}
+                </span>
+              )}
             </button>
           )
         })}
@@ -236,10 +260,10 @@ export default function Sidebar({
         <div className="px-3 mt-3">
           <button
             onClick={() => setStarredOpen(!starredOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Star size={16} className="text-amber-500" />
+              <Star size={16} className="text-g-accent" />
               <span>Starred</span>
             </div>
             <ChevronDown
@@ -251,12 +275,12 @@ export default function Sidebar({
           {starredOpen && (
             <div className="mt-1 space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
               {starredLoading ? (
-                <div className="flex items-center gap-2 px-3 py-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 px-3 py-2 text-xs text-g-text-disabled">
                   <Loader2 size={12} className="animate-spin" />
                   Loading...
                 </div>
               ) : starredItems.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">
+                <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark px-3 py-2">
                   No starred items
                 </p>
               ) : (
@@ -264,13 +288,13 @@ export default function Sidebar({
                   <button
                     key={item.id}
                     onClick={() => onNavigateToItem?.(item.id)}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors truncate"
+                    className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark rounded-md transition-colors truncate"
                     title={item.name}
                   >
                     {item.is_folder === 1 ? (
-                      <Folder size={14} className="text-blue-400 shrink-0" />
+                      <Folder size={14} className="text-g-primary-dark shrink-0" />
                     ) : (
-                      <FileText size={14} className="text-gray-400 shrink-0" />
+                      <FileText size={14} className="text-g-text-disabled shrink-0" />
                     )}
                     <span className="truncate">{item.name}</span>
                   </button>
@@ -286,10 +310,10 @@ export default function Sidebar({
         <div className="px-3 mt-3">
           <button
             onClick={() => setSyncedFoldersOpen(!syncedFoldersOpen)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition-colors"
           >
             <div className="flex items-center gap-2">
-              <FolderSync size={16} className="text-blue-500" />
+              <FolderSync size={16} className="text-g-primary dark:text-g-primary-dark" />
               <span>Synced Folders</span>
             </div>
             <ChevronDown
@@ -301,7 +325,7 @@ export default function Sidebar({
           {syncedFoldersOpen && (
             <div className="mt-1 space-y-0.5 max-h-48 overflow-y-auto custom-scrollbar">
               {syncedFolders.length === 0 ? (
-                <p className="text-xs text-gray-400 dark:text-gray-500 px-3 py-2">
+                <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark px-3 py-2">
                   No synced folders
                 </p>
               ) : (
@@ -309,23 +333,23 @@ export default function Sidebar({
                   const folderName = folder.local_path.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? 'Folder'
                   const progress = folderProgress[folder.id]
                   const statusDot =
-                    folder.status === 'synced' ? 'bg-green-500' :
-                    folder.status === 'syncing' ? 'bg-amber-400 animate-pulse' :
-                    folder.status === 'error' ? 'bg-red-500' :
-                    'bg-gray-400'
+                    folder.status === 'synced' ? 'bg-g-success' :
+                    folder.status === 'syncing' ? 'bg-g-accent animate-pulse' :
+                    folder.status === 'error' ? 'bg-g-secondary' :
+                    'bg-g-text-disabled'
 
                   return (
                     <div key={folder.id} className="group">
-                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition-colors">
                         <div className={`h-2 w-2 rounded-full flex-shrink-0 ${statusDot}`} />
-                        <Folder size={14} className="text-blue-400 shrink-0" />
-                        <span className="flex-1 text-xs text-gray-600 dark:text-gray-400 truncate" title={folder.local_path}>
+                        <Folder size={14} className="text-g-primary-dark shrink-0" />
+                        <span className="flex-1 text-xs text-g-text-secondary dark:text-g-text-secondary-dark truncate" title={folder.local_path}>
                           {folderName}
                         </span>
                         {folder.status === 'error' && (
                           <button
                             onClick={() => handleRetryFolder(folder.id)}
-                            className="text-amber-500 hover:text-amber-600 p-0.5"
+                            className="text-g-accent hover:text-g-accent-dark p-0.5"
                             title={folder.last_error ?? 'Retry sync'}
                           >
                             <RefreshCw size={12} />
@@ -333,7 +357,7 @@ export default function Sidebar({
                         )}
                         <button
                           onClick={() => handleRemoveFolder(folder.id)}
-                          className="text-gray-400 hover:text-red-500 p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-g-text-disabled hover:text-g-secondary p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                           title="Remove synced folder"
                         >
                           <X size={12} />
@@ -342,13 +366,13 @@ export default function Sidebar({
                       {/* Progress bar during sync */}
                       {folder.status === 'syncing' && progress && progress.total > 0 && (
                         <div className="px-3 pb-1">
-                          <div className="h-1 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                          <div className="h-1 rounded-full bg-g-border dark:bg-g-border-dark overflow-hidden">
                             <div
-                              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                              className="h-full bg-g-primary rounded-full transition-all duration-300"
                               style={{ width: `${Math.round((progress.current / progress.total) * 100)}%` }}
                             />
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+                          <p className="text-[10px] text-g-text-disabled mt-0.5 truncate">
                             {progress.current}/{progress.total} — {progress.fileName}
                           </p>
                         </div>
@@ -361,7 +385,7 @@ export default function Sidebar({
               {/* Add Folder button */}
               <button
                 onClick={handleAddFolder}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors font-medium"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-g-primary dark:text-g-primary-dark hover:bg-g-primary/8 dark:hover:bg-g-primary-dark/10 rounded-md transition-colors font-medium"
               >
                 <Plus size={14} />
                 Add Folder
@@ -377,11 +401,11 @@ export default function Sidebar({
       {/* Sync status (bottom, above theme/auth) */}
       {isConnected && (
         <div className="px-3 pb-2">
-          <div className="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+          <div className="px-3 py-2 rounded-lg bg-g-surface dark:bg-g-bg-dark/50">
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${phaseColor[syncPhase] ?? 'bg-gray-400'}`} />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                <div className={`h-2 w-2 rounded-full ${phaseColor[syncPhase] ?? 'bg-g-text-disabled'}`} />
+                <span className="text-xs font-medium text-g-text-secondary dark:text-g-text-secondary-dark">
                   {phaseLabel[syncPhase] ?? syncPhase}
                 </span>
               </div>
@@ -389,7 +413,7 @@ export default function Sidebar({
                 <button
                   onClick={onStartSync}
                   disabled={syncing}
-                  className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+                  className="text-[10px] font-bold text-g-primary dark:text-g-primary-dark hover:underline disabled:opacity-50"
                 >
                   {syncing ? 'Starting...' : 'Start'}
                 </button>
@@ -397,7 +421,7 @@ export default function Sidebar({
                 <div className="flex items-center gap-2">
                   <button
                     onClick={onTriggerSync}
-                    className="flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                    className="flex items-center gap-1 text-[10px] font-bold text-g-primary dark:text-g-primary-dark hover:underline"
                     title="Trigger immediate sync"
                   >
                     <RefreshCw size={10} />
@@ -405,7 +429,7 @@ export default function Sidebar({
                   </button>
                   <button
                     onClick={onStopSync}
-                    className="text-[10px] font-bold text-gray-500 dark:text-gray-400 hover:underline"
+                    className="text-[10px] font-bold text-g-text-secondary dark:text-g-text-secondary-dark hover:underline"
                   >
                     Stop
                   </button>
@@ -413,13 +437,13 @@ export default function Sidebar({
               ) : (
                 <button
                   onClick={onStopSync}
-                  className="text-[10px] font-bold text-gray-500 dark:text-gray-400 hover:underline"
+                  className="text-[10px] font-bold text-g-text-secondary dark:text-g-text-secondary-dark hover:underline"
                 >
                   Stop
                 </button>
               )}
             </div>
-            <div className="flex gap-2 text-[10px] text-gray-400 dark:text-gray-500">
+            <div className="flex gap-2 text-[10px] text-g-text-disabled dark:text-g-text-disabled-dark">
               <span>{syncCounts.totalFiles.toLocaleString()} files</span>
               <span>&middot;</span>
               <span>{syncCounts.totalFolders.toLocaleString()} folders</span>
@@ -429,17 +453,17 @@ export default function Sidebar({
       )}
 
       {/* Bottom section */}
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+      <div className="p-4 border-t border-g-border/50 dark:border-g-border-dark space-y-3">
         {/* Theme picker */}
-        <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+        <div className="flex items-center bg-g-btn-secondary dark:bg-g-btn-secondary-dark p-1 rounded-lg">
           {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
             <button
               key={value}
               onClick={() => setTheme(value)}
               className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs transition-all ${
                 theme === value
-                  ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark font-medium'
+                  : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
               }`}
               title={label}
             >
@@ -453,20 +477,20 @@ export default function Sidebar({
         {authStatus === 'connected' ? (
           <button
             onClick={onDisconnect}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-secondary dark:hover:text-g-secondary-dark hover:bg-g-secondary/8 dark:hover:bg-g-secondary-dark/10 rounded-lg transition-colors"
           >
             <LogOut size={16} />
             Disconnect
           </button>
         ) : authStatus === 'connecting' ? (
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-gray-400">
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-g-text-disabled">
             <Loader2 size={16} className="animate-spin" />
             Connecting...
           </div>
         ) : (
           <button
             onClick={onLogin}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-g-text dark:text-g-text-dark bg-g-btn-secondary dark:bg-g-btn-secondary-dark hover:bg-g-border dark:hover:bg-g-border-dark rounded-lg transition-colors"
           >
             <LogIn size={16} />
             Login with Google

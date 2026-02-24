@@ -11,7 +11,7 @@ import PatchNotesModal from './components/PatchNotesModal'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
 type AuthStatus = 'disconnected' | 'connecting' | 'connected'
-type ActiveView = 'explorer' | 'smart-tools' | 'settings'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash'
 
 function App(): React.JSX.Element {
   // ── Auth state ──
@@ -217,7 +217,7 @@ function App(): React.JSX.Element {
   void syncError
 
   return (
-    <div className="h-screen w-full flex bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden">
+    <div className="h-screen w-full flex bg-g-bg dark:bg-g-bg-dark text-g-text dark:text-g-text-dark overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         activeView={activeView}
@@ -254,29 +254,29 @@ function App(): React.JSX.Element {
             {!isConnected ? (
               /* Welcome / login prompt */
               <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-                <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-200 dark:shadow-blue-900/30 mb-6">
+                <div className="w-20 h-20 bg-g-primary rounded-2xl flex items-center justify-center shadow-xl shadow-g-primary/20 dark:shadow-g-primary-dark/15 mb-6">
                   <HardDrive className="text-white" size={40} />
                 </div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100 mb-2">
-                  Welcome to <span className="text-blue-500">G</span>-Sync
+                <h1 className="text-2xl font-bold tracking-tight text-g-text dark:text-g-text-dark mb-2">
+                  Welcome to <span className="text-g-primary dark:text-g-primary-dark">G</span>-Sync
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400 max-w-md mb-6">
+                <p className="text-g-text-secondary dark:text-g-text-secondary-dark max-w-md mb-6">
                   A modern desktop client for your Google Drive. Connect your account to start syncing and managing files.
                 </p>
                 {authError && (
-                  <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 px-4 py-2 text-sm text-red-600 dark:text-red-400">
+                  <div className="mb-4 rounded-lg bg-g-secondary/8 dark:bg-g-secondary-dark/10 border border-g-secondary/20 dark:border-g-secondary-dark/30 px-4 py-2 text-sm text-g-secondary dark:text-g-secondary-dark">
                     {authError}
                   </div>
                 )}
                 {encryptionWarning && (
-                  <div className="mb-4 rounded-lg bg-yellow-50 dark:bg-yellow-500/10 border border-yellow-200 dark:border-yellow-500/30 px-4 py-2 text-sm text-yellow-600 dark:text-yellow-400">
+                  <div className="mb-4 rounded-lg bg-g-accent/10 dark:bg-g-accent-dark/10 border border-g-accent/20 dark:border-g-accent-dark/30 px-4 py-2 text-sm text-amber-600 dark:text-g-accent-dark">
                     {encryptionWarning}
                   </div>
                 )}
                 <button
                   onClick={handleLogin}
                   disabled={authStatus === 'connecting'}
-                  className="flex items-center gap-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-xl font-semibold hover:bg-gray-800 dark:hover:bg-gray-100 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-3 bg-g-text dark:bg-g-text-dark text-white dark:text-g-bg-dark px-6 py-3 rounded-xl font-semibold hover:bg-g-text/90 dark:hover:bg-g-text-dark/90 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
@@ -297,6 +297,19 @@ function App(): React.JSX.Element {
                   sortBy={sortBy}
                   sortDir={sortDir}
                   onSelectedItemChange={setSelectedItem}
+                />
+              </div>
+            ) : activeView === 'trash' ? (
+              <div className="h-full animate-fade-in">
+                <ExplorerRoot
+                  connected={isConnected}
+                  searchQuery={searchQuery}
+                  debouncedQuery={debouncedQuery}
+                  viewMode={viewMode}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSelectedItemChange={setSelectedItem}
+                  showTrashed
                 />
               </div>
             ) : activeView === 'smart-tools' ? (

@@ -1,5 +1,5 @@
 /**
- * ExplorerRoot — the main explorer component (Phase 3 + Phase 4 + Phase 10).
+ * ExplorerRoot — the main explorer component (Phase 3 + Phase 4 + Phase 10 + Phase 12).
  *
  * Orchestrates:
  * - Breadcrumb navigation (droppable in list/grid modes)
@@ -9,6 +9,7 @@
  * - Phase 4: DndContext for drag-and-drop (list/grid), context menu, inline rename,
  *   ops status bar, ops panel, confirm dialog
  * - Phase 10: star toggle, download, selection action bar
+ * - Phase 12: Trash view (showTrashed), capability guards, empty trash, restore
  *
  * Search, sort, and view mode are now controlled by the parent (App -> TopBar).
  */
@@ -25,7 +26,7 @@ import {
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
-import { Search, Folder, Download, X } from 'lucide-react'
+import { Search, Folder, Download, X, Trash2 } from 'lucide-react'
 import type {
   ViewMode,
   SortBy,
@@ -59,6 +60,7 @@ interface ExplorerRootProps {
   sortBy: SortBy
   sortDir: SortDir
   onSelectedItemChange?: (item: DriveItemDTO | null) => void
+  showTrashed?: boolean
 }
 
 export default function ExplorerRoot({
@@ -68,11 +70,14 @@ export default function ExplorerRoot({
   viewMode,
   sortBy,
   sortDir,
-  onSelectedItemChange
+  onSelectedItemChange,
+  showTrashed = false
 }: ExplorerRootProps) {
   // -- Navigation state --
   const [folderStack, setFolderStack] = useState<BreadcrumbEntry[]>([])
-  const currentFolderId = folderStack.length > 0 ? folderStack[folderStack.length - 1]!.id : 'root'
+  const currentFolderId = showTrashed
+    ? 'root'
+    : folderStack.length > 0 ? folderStack[folderStack.length - 1]!.id : 'root'
 
   // -- Query --
   const query: ExplorerQuery = {
@@ -81,7 +86,7 @@ export default function ExplorerRoot({
     sortBy,
     sortDir,
     q: debouncedQuery || undefined,
-    showTrashed: false
+    showTrashed
   }
 
   const { items, totalCount, loading, loadMore, hasMore } = useExplorerData(query)
@@ -141,6 +146,7 @@ export default function ExplorerRoot({
   const [isDragging, setIsDragging] = useState(false)
 
   function handleDragStart(event: DragStartEvent) {
+    if (showTrashed) return // no drag-and-drop in trash view
     const item = event.active.data.current?.item as DriveItemDTO | undefined
     if (!item) return
     setActiveItem(item)
@@ -218,8 +224,9 @@ export default function ExplorerRoot({
     setRenamingId(null)
   }, [])
 
-  // -- Phase 4: Delete confirmation state --
+  // -- Phase 4 / Phase 12: Delete confirmation state --
   const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[] | null>(null)
+  const [emptyTrashConfirm, setEmptyTrashConfirm] = useState(false)
 
   const handleTrash = useCallback(() => {
     if (selection.selectedIds.size === 0) return
@@ -229,11 +236,28 @@ export default function ExplorerRoot({
     })
   }, [selection.selectedIds])
 
+  const handleRestore = useCallback(() => {
+    if (selection.selectedIds.size === 0) return
+    window.gsync.ops.enqueueTrash({
+      fileIds: [...selection.selectedIds],
+      trashed: false
+    })
+  }, [selection.selectedIds])
+
   const handleDeletePermanently = useCallback(() => {
     if (!deleteConfirmIds || deleteConfirmIds.length === 0) return
     window.gsync.ops.enqueueDelete({ fileIds: deleteConfirmIds })
     setDeleteConfirmIds(null)
   }, [deleteConfirmIds])
+
+  const handleEmptyTrash = useCallback(async () => {
+    setEmptyTrashConfirm(false)
+    try {
+      await window.gsync.ops.emptyTrash()
+    } catch (err) {
+      console.error('[ExplorerRoot] emptyTrash failed:', err)
+    }
+  }, [])
 
   // -- Phase 10: Star toggle --
   const handleToggleStar = useCallback((itemId: string, starred: boolean) => {
@@ -271,6 +295,7 @@ export default function ExplorerRoot({
   // -- Navigation --
   const handleOpenItem = useCallback(
     (id: string) => {
+      if (showTrashed) return // no folder navigation in trash view
       const item = items.find((i) => i.id === id)
       if (!item) return
       if (item.type === 'folder') {
@@ -280,7 +305,7 @@ export default function ExplorerRoot({
         setContextMenu(null)
       }
     },
-    [items]
+    [items, showTrashed]
   )
 
   const navigateUp = useCallback(() => {
@@ -319,8 +344,9 @@ export default function ExplorerRoot({
     (e: React.KeyboardEvent) => {
       if (renamingId) return
 
-      // Backspace / Alt+Left: go up
+      // Backspace / Alt+Left: go up (not in trash view)
       if (
+        !showTrashed &&
         (e.key === 'Backspace' || (e.altKey && e.key === 'ArrowLeft')) &&
         folderStack.length > 0
       ) {
@@ -338,7 +364,8 @@ export default function ExplorerRoot({
         return
       }
 
-      if (e.key === 'F2' && selection.focusedId && selection.selectedIds.size === 1) {
+      // F2: Rename (only in normal view, not trash)
+      if (!showTrashed && e.key === 'F2' && selection.focusedId && selection.selectedIds.size === 1) {
         e.preventDefault()
         setRenamingId(selection.focusedId)
         return
@@ -348,9 +375,14 @@ export default function ExplorerRoot({
         const target = e.target as HTMLElement
         if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
           e.preventDefault()
-          if (e.shiftKey) {
-            setDeleteConfirmIds([...selection.selectedIds])
+          if (showTrashed) {
+            // In trash view: Shift+Del = permanent delete with confirmation
+            if (e.shiftKey) {
+              setDeleteConfirmIds([...selection.selectedIds])
+            }
+            // Plain Del does nothing in trash (already trashed)
           } else {
+            // Normal view: Del = move to trash (no permanent delete)
             handleTrash()
           }
           return
@@ -361,6 +393,7 @@ export default function ExplorerRoot({
     },
     [
       renamingId,
+      showTrashed,
       folderStack.length,
       navigateUp,
       selection.focusedId,
@@ -377,6 +410,19 @@ export default function ExplorerRoot({
   const focusedItem = selection.focusedId
     ? items.find((i) => i.id === selection.focusedId)
     : undefined
+
+  // Compute capability flags for the selection (all selected items must have the capability)
+  const canTrashSelection = selection.selectedIds.size > 0 &&
+    [...selection.selectedIds].every((id) => {
+      const item = items.find((i) => i.id === id)
+      return item ? item.canTrash : false
+    })
+
+  const canDeleteSelection = selection.selectedIds.size > 0 &&
+    [...selection.selectedIds].every((id) => {
+      const item = items.find((i) => i.id === id)
+      return item ? item.canDelete : false
+    })
 
   if (!connected) return null
 
@@ -425,46 +471,102 @@ export default function ExplorerRoot({
         onKeyDown={handleContainerKeyDown}
         tabIndex={-1}
       >
-        {/* -- Breadcrumbs -- */}
-        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3 flex-shrink-0">
-          <DroppableBreadcrumb folderId="root" onClick={navigateToRoot}>
-            My Drive
-          </DroppableBreadcrumb>
-          {folderStack.map((folder, i) => (
-            <span key={folder.id} className="flex items-center gap-1">
-              <span className="text-gray-300 dark:text-gray-600">/</span>
-              <DroppableBreadcrumb folderId={folder.id} onClick={() => navigateToBreadcrumb(i)}>
-                {folder.name}
-              </DroppableBreadcrumb>
+        {/* -- Breadcrumbs / Trash header -- */}
+        {showTrashed ? (
+          <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+            <div className="flex items-center gap-2 text-sm font-medium text-g-text dark:text-g-text-dark">
+              <Trash2 size={16} className="text-g-text-disabled" />
+              Trash
+            </div>
+            {totalCount > 0 && (
+              <>
+                <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+                  {totalCount.toLocaleString()} items
+                </span>
+                <div className="flex-1" />
+                <button
+                  onClick={() => setEmptyTrashConfirm(true)}
+                  className="px-3 py-1 text-xs font-medium text-g-secondary dark:text-g-secondary-dark border border-g-secondary/30 dark:border-g-secondary-dark/40 rounded-md hover:bg-g-secondary/8 dark:hover:bg-g-secondary-dark/10 transition"
+                >
+                  Empty Trash
+                </button>
+              </>
+            )}
+            {totalCount === 0 && (
+              <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark ml-auto">
+                No items in trash
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-1 text-xs text-g-text-secondary dark:text-g-text-secondary-dark mb-3 flex-shrink-0">
+            <DroppableBreadcrumb folderId="root" onClick={navigateToRoot}>
+              My Drive
+            </DroppableBreadcrumb>
+            {folderStack.map((folder, i) => (
+              <span key={folder.id} className="flex items-center gap-1">
+                <span className="text-g-border dark:text-g-border-dark">/</span>
+                <DroppableBreadcrumb folderId={folder.id} onClick={() => navigateToBreadcrumb(i)}>
+                  {folder.name}
+                </DroppableBreadcrumb>
+              </span>
+            ))}
+            {totalCount > 0 && (
+              <span className="ml-auto text-g-text-disabled dark:text-g-text-disabled-dark">
+                {totalCount.toLocaleString()} items
+                {selection.selectedIds.size > 0 && (
+                  <> &middot; {selection.selectedIds.size} selected</>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* -- Trash info banner -- */}
+        {showTrashed && items.length > 0 && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-lg bg-g-accent/10 dark:bg-g-accent-dark/10 border border-g-accent/20 dark:border-g-accent-dark/30 flex-shrink-0">
+            <Trash2 size={14} className="text-g-accent flex-shrink-0" />
+            <span className="text-xs text-amber-700 dark:text-g-accent-dark">
+              Items in trash are deleted forever after 30 days
             </span>
-          ))}
-          {totalCount > 0 && (
-            <span className="ml-auto text-gray-400 dark:text-gray-500">
-              {totalCount.toLocaleString()} items
-              {selection.selectedIds.size > 0 && (
-                <> &middot; {selection.selectedIds.size} selected</>
-              )}
-            </span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* -- Selection Action Bar -- */}
         {selection.selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 mb-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/30 flex-shrink-0">
-            <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+          <div className="flex items-center gap-3 mb-2 px-3 py-2 rounded-lg bg-g-primary/8 dark:bg-g-primary-dark/10 border border-g-primary/20 dark:border-g-primary-dark/30 flex-shrink-0">
+            <span className="text-xs font-medium text-g-primary dark:text-g-primary-dark">
               {selection.selectedIds.size} selected
             </span>
             <div className="flex-1" />
-            <button
-              onClick={handleDownload}
-              className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-600/20 hover:bg-blue-200 dark:hover:bg-blue-600/30 rounded-md transition-colors"
-            >
-              <Download size={13} />
-              Download
-            </button>
+            {showTrashed ? (
+              <>
+                <button
+                  onClick={handleRestore}
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-g-primary dark:text-g-primary-dark bg-g-primary/12 dark:bg-g-primary-dark/15 hover:bg-g-primary/20 dark:hover:bg-g-primary-dark/25 rounded-md transition-colors"
+                >
+                  Restore
+                </button>
+                <button
+                  onClick={() => setDeleteConfirmIds([...selection.selectedIds])}
+                  disabled={!canDeleteSelection}
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-g-secondary dark:text-g-secondary-dark bg-g-secondary/8 dark:bg-g-secondary-dark/10 hover:bg-g-secondary/15 dark:hover:bg-g-secondary-dark/20 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Delete permanently
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={handleDownload}
+                className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-g-primary dark:text-g-primary-dark bg-g-primary/12 dark:bg-g-primary-dark/15 hover:bg-g-primary/20 dark:hover:bg-g-primary-dark/25 rounded-md transition-colors"
+              >
+                <Download size={13} />
+                Download
+              </button>
+            )}
             <button
               onClick={() => setSelection({ selectedIds: new Set() })}
-              className="p-1 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 rounded transition-colors"
+              className="p-1 text-g-primary dark:text-g-primary-dark hover:text-g-primary/70 dark:hover:text-g-primary-dark/70 rounded transition-colors"
               title="Clear selection"
             >
               <X size={14} />
@@ -473,44 +575,50 @@ export default function ExplorerRoot({
         )}
 
         {/* -- Content -- */}
-        <div className="flex-1 min-h-0 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-white dark:bg-gray-900/50 flex flex-col">
+        <div className="flex-1 min-h-0 rounded-xl border border-g-border dark:border-g-border-dark overflow-hidden bg-g-bg dark:bg-g-surface-dark/50 flex flex-col">
           {loading && items.length === 0 ? (
             <div className="flex flex-col h-full animate-pulse">
               {/* Skeleton header */}
-              <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/70 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+              <div className="flex items-center gap-3 px-4 py-2 bg-g-surface dark:bg-g-btn-secondary-dark/70 border-b border-g-border dark:border-g-border-dark flex-shrink-0">
                 <div className="w-7" />
-                <div className="h-3 w-12 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 w-12 rounded bg-g-border dark:bg-g-border-dark" />
                 <div className="flex-1" />
-                <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700" />
-                <div className="h-3 w-10 rounded bg-gray-200 dark:bg-gray-700" />
+                <div className="h-3 w-16 rounded bg-g-border dark:bg-g-border-dark" />
+                <div className="h-3 w-10 rounded bg-g-border dark:bg-g-border-dark" />
               </div>
               {/* Skeleton rows */}
               <div className="flex-1 overflow-hidden">
                 {Array.from({ length: 10 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-3 px-4 h-[44px]">
-                    <div className="flex-shrink-0 w-7 h-7 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="flex-shrink-0 w-7 h-7 rounded bg-g-border dark:bg-g-border-dark" />
                     <div className="flex-1 min-w-0">
-                      <div className="h-3.5 rounded bg-gray-200 dark:bg-gray-700" style={{ width: `${35 + (i % 5) * 12}%` }} />
+                      <div className="h-3.5 rounded bg-g-border dark:bg-g-border-dark" style={{ width: `${35 + (i % 5) * 12}%` }} />
                     </div>
                     <div className="w-5" />
-                    <div className="w-16 h-3 rounded bg-gray-200 dark:bg-gray-700" />
-                    <div className="w-12 h-3 rounded bg-gray-200 dark:bg-gray-700" />
+                    <div className="w-16 h-3 rounded bg-g-border dark:bg-g-border-dark" />
+                    <div className="w-12 h-3 rounded bg-g-border dark:bg-g-border-dark" />
                   </div>
                 ))}
               </div>
             </div>
           ) : items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400 gap-3">
-              {debouncedQuery ? (
+            <div className="flex flex-col items-center justify-center h-full text-g-text-secondary dark:text-g-text-secondary-dark gap-3">
+              {showTrashed ? (
                 <>
-                  <Search className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+                  <Trash2 className="w-16 h-16 text-g-border dark:text-g-border-dark" />
+                  <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">Trash is empty</p>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Items you delete will appear here</p>
+                </>
+              ) : debouncedQuery ? (
+                <>
+                  <Search className="w-12 h-12 text-g-border dark:text-g-border-dark" />
                   <p className="text-sm">No results found for &ldquo;{debouncedQuery}&rdquo;</p>
                 </>
               ) : (
                 <>
-                  <Folder className="w-16 h-16 text-gray-200 dark:text-gray-700" />
-                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No files synced yet</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600">Start a sync to populate your file browser</p>
+                  <Folder className="w-16 h-16 text-g-border dark:text-g-border-dark" />
+                  <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">No files synced yet</p>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Start a sync to populate your file browser</p>
                 </>
               )}
             </div>
@@ -561,16 +669,21 @@ export default function ExplorerRoot({
           hasFocusedItem={!!focusedItem}
           isFocusedFolder={focusedItem?.type === 'folder'}
           isFocusedStarred={focusedItem?.starred ?? false}
+          isTrashView={showTrashed}
+          canTrashSelection={canTrashSelection}
+          canDeleteSelection={canDeleteSelection}
           onOpen={() => {
             if (selection.focusedId) handleOpenItem(selection.focusedId)
           }}
           onRename={() => {
-            if (selection.focusedId && selection.selectedIds.size === 1) {
+            if (!showTrashed && selection.focusedId && selection.selectedIds.size === 1) {
               setRenamingId(selection.focusedId)
             }
           }}
           onTrash={handleTrash}
           onDelete={() => setDeleteConfirmIds([...selection.selectedIds])}
+          onRestore={handleRestore}
+          onEmptyTrash={() => setEmptyTrashConfirm(true)}
           onToggleStar={() => {
             if (focusedItem) handleToggleStar(focusedItem.id, !focusedItem.starred)
           }}
@@ -579,7 +692,7 @@ export default function ExplorerRoot({
         />
       )}
 
-      {/* -- Delete Confirmation Dialog -- */}
+      {/* -- Delete Confirmation Dialog (trash view only) -- */}
       {deleteConfirmIds && (
         <ConfirmDialog
           title="Delete permanently?"
@@ -588,6 +701,18 @@ export default function ExplorerRoot({
           destructive
           onConfirm={handleDeletePermanently}
           onCancel={() => setDeleteConfirmIds(null)}
+        />
+      )}
+
+      {/* -- Empty Trash Confirmation Dialog -- */}
+      {emptyTrashConfirm && (
+        <ConfirmDialog
+          title="Empty Trash?"
+          message="All items in the trash will be permanently deleted. This action cannot be undone."
+          confirmLabel="Empty Trash"
+          destructive
+          onConfirm={handleEmptyTrash}
+          onCancel={() => setEmptyTrashConfirm(false)}
         />
       )}
     </>

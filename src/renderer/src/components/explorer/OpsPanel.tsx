@@ -31,13 +31,13 @@ function opTypeIcon(opType: string): string {
 
 function statusBadge(status: string): { text: string; className: string } {
   switch (status) {
-    case 'pending': return { text: 'Pending', className: 'text-blue-400 bg-blue-600/15' }
-    case 'in_flight': return { text: 'Syncing', className: 'text-blue-400 bg-blue-600/15' }
-    case 'succeeded': return { text: 'Done', className: 'text-green-400 bg-green-600/15' }
-    case 'failed': return { text: 'Failed', className: 'text-red-400 bg-red-600/15' }
-    case 'rolled_back': return { text: 'Rolled back', className: 'text-gray-400 bg-gray-600/15' }
-    case 'needs_user': return { text: 'Needs attention', className: 'text-amber-400 bg-amber-600/15' }
-    default: return { text: status, className: 'text-gray-400 bg-gray-600/15' }
+    case 'pending': return { text: 'Pending', className: 'text-g-primary dark:text-g-primary-dark bg-g-primary/10 dark:bg-g-primary-dark/15' }
+    case 'in_flight': return { text: 'Syncing', className: 'text-g-primary dark:text-g-primary-dark bg-g-primary/10 dark:bg-g-primary-dark/15' }
+    case 'succeeded': return { text: 'Done', className: 'text-g-success dark:text-g-success-dark bg-g-success/10 dark:bg-g-success-dark/15' }
+    case 'failed': return { text: 'Failed', className: 'text-g-secondary dark:text-g-secondary-dark bg-g-secondary/10 dark:bg-g-secondary-dark/15' }
+    case 'rolled_back': return { text: 'Rolled back', className: 'text-g-text-disabled dark:text-g-text-disabled-dark bg-g-text-disabled/10' }
+    case 'needs_user': return { text: 'Needs attention', className: 'text-g-accent dark:text-g-accent-dark bg-g-accent/10 dark:bg-g-accent-dark/15' }
+    default: return { text: status, className: 'text-g-text-disabled bg-g-text-disabled/10' }
   }
 }
 
@@ -69,47 +69,47 @@ export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose, onClear 
 
   if (visibleOps.length === 0) {
     return (
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 p-4">
+      <div className="border-t border-g-border dark:border-g-border-dark bg-g-surface dark:bg-g-btn-secondary-dark/70 p-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Operations</span>
+          <span className="text-sm font-medium text-g-text dark:text-g-text-dark">Operations</span>
           <div className="flex items-center gap-2">
             {hasCompleted && onClear && (
               <button
                 onClick={onClear}
-                className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                className="px-2.5 py-1 text-xs font-medium rounded-md border border-g-border dark:border-g-border-dark text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition"
               >
                 Clear
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-g-border dark:border-g-border-dark text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition"
             >
               Close
             </button>
           </div>
         </div>
-        <p className="text-xs text-gray-500">No active operations.</p>
+        <p className="text-xs text-g-text-secondary">No active operations.</p>
       </div>
     )
   }
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/70 max-h-[200px] overflow-auto">
+    <div className="border-t border-g-border dark:border-g-border-dark bg-g-surface dark:bg-g-btn-secondary-dark/70 max-h-[200px] overflow-auto">
       <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Operations ({visibleOps.length})</span>
+        <span className="text-sm font-medium text-g-text dark:text-g-text-dark">Operations ({visibleOps.length})</span>
         <div className="flex items-center gap-2">
           {hasCompleted && onClear && (
             <button
               onClick={onClear}
-              className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+              className="px-2.5 py-1 text-xs font-medium rounded-md border border-g-border dark:border-g-border-dark text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition"
             >
               Clear
             </button>
           )}
           <button
             onClick={onClose}
-            className="px-2.5 py-1 text-xs font-medium rounded-md border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            className="px-2.5 py-1 text-xs font-medium rounded-md border border-g-border dark:border-g-border-dark text-g-text-secondary dark:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark transition"
           >
             Close
           </button>

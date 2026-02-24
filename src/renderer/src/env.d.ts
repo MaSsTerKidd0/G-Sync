@@ -146,6 +146,9 @@ interface GsyncApi {
     itemById(id: string): Promise<DriveItemRowBridge | null>
     breadcrumbs(itemId: string): Promise<DriveItemRowBridge[]>
     counts(): Promise<{ totalFiles: number; totalFolders: number; totalRemoved: number }>
+    starredItems(limit?: number): Promise<DriveItemRowBridge[]>
+    updateStarred(fileId: string, starred: boolean): Promise<void>
+    trashedCount(): Promise<number>
   }
   explorer: {
     listFolderPage(args: {
@@ -193,6 +196,7 @@ interface GsyncApi {
     startWorker(): Promise<void>
     stopWorker(): Promise<void>
     clearCompleted(): Promise<number>
+    emptyTrash(): Promise<void>
     onOpsChanged(cb: (payload: { type: string; opIds: string[] }) => void): () => void
     onOpsProgress(cb: (payload: { opId: string; opType: string; fileId: string; status: string }) => void): () => void
     onOpsError(cb: (payload: { opId: string; opType: string; fileId: string; code: string; message: string }) => void): () => void

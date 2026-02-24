@@ -32,14 +32,14 @@ export default function TopBar({
   onSortChange
 }: TopBarProps) {
   return (
-    <header className="h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between px-6 shrink-0">
+    <header className="h-14 border-b border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-surface-dark flex items-center justify-between px-6 shrink-0">
       {activeView === 'explorer' ? (
         <>
           {/* Search bar */}
           <div className="flex-1 max-w-2xl">
             <div className="relative group">
               <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-blue-500 transition-colors"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-g-text-disabled dark:text-g-text-disabled-dark group-focus-within:text-g-primary transition-colors"
                 size={18}
               />
               <input
@@ -47,12 +47,12 @@ export default function TopBar({
                 placeholder="Search in Drive..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="w-full bg-gray-100 dark:bg-gray-800 border border-transparent focus:bg-white dark:focus:bg-gray-900 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 focus:border-blue-500 rounded-xl py-2 pl-10 pr-10 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-all outline-none"
+                className="w-full bg-g-btn-secondary dark:bg-g-btn-secondary-dark border border-transparent focus:bg-g-bg dark:focus:bg-g-surface-dark focus:ring-2 focus:ring-g-primary/15 dark:focus:ring-g-primary-dark/20 focus:border-g-primary rounded-xl py-2 pl-10 pr-10 text-sm text-g-text dark:text-g-text-dark placeholder-g-text-disabled dark:placeholder-g-text-disabled-dark transition-all outline-none"
               />
               {searchQuery && (
                 <button
                   onClick={() => onSearchChange('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-g-text-disabled hover:text-g-text-secondary dark:hover:text-g-text-secondary-dark"
                 >
                   <X size={16} />
                 </button>
@@ -69,8 +69,8 @@ export default function TopBar({
                   onClick={() => onSortChange(s)}
                   className={`px-2 py-1.5 rounded transition ${
                     sortBy === s
-                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
+                      ? 'bg-g-primary/8 dark:bg-g-primary-dark/10 text-g-primary dark:text-g-primary-dark font-medium'
+                      : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark'
                   }`}
                 >
                   {s === 'name' ? 'Name' : s === 'modifiedTime' ? 'Date' : 'Size'}
@@ -82,13 +82,13 @@ export default function TopBar({
             </div>
 
             {/* View mode toggle */}
-            <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+            <div className="flex items-center bg-g-btn-secondary dark:bg-g-btn-secondary-dark p-1 rounded-lg">
               <button
                 onClick={() => onViewModeChange('grid')}
                 className={`p-1.5 rounded-md transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark'
+                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
                 }`}
                 title="Grid View"
               >
@@ -98,8 +98,8 @@ export default function TopBar({
                 onClick={() => onViewModeChange('list')}
                 className={`p-1.5 rounded-md transition-all ${
                   viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark'
+                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
                 }`}
                 title="List View"
               >
@@ -109,7 +109,7 @@ export default function TopBar({
           </div>
         </>
       ) : (
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-lg font-semibold text-g-text dark:text-g-text-dark">
           {VIEW_TITLES[activeView]}
         </h2>
       )}

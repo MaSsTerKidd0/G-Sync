@@ -5,11 +5,58 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Google-Inspired Color Palette ── */
+
+  /* Primary (Google Blue) */
+  --color-g-primary: #1A73E8;
+  --color-g-primary-dark: #8AB4F8;
+
+  /* Secondary (Google Red / Error) */
+  --color-g-secondary: #EA4335;
+  --color-g-secondary-dark: #F28B82;
+
+  /* Accent (Google Yellow / Warning) */
+  --color-g-accent: #FBBC04;
+  --color-g-accent-dark: #FDD663;
+
+  /* Success (Google Green) */
+  --color-g-success: #34A853;
+  --color-g-success-dark: #81C995;
+
+  /* Backgrounds */
+  --color-g-bg: #FFFFFF;
+  --color-g-bg-dark: #121212;
+
+  /* Surface (Cards / Panels) */
+  --color-g-surface: #F8F9FA;
+  --color-g-surface-dark: #1E1E1E;
+
+  /* Borders / Dividers */
+  --color-g-border: #DADCE0;
+  --color-g-border-dark: #3C4043;
+
+  /* Text */
+  --color-g-text: #202124;
+  --color-g-text-dark: #E8EAED;
+  --color-g-text-secondary: #5F6368;
+  --color-g-text-secondary-dark: #BDC1C6;
+  --color-g-text-disabled: #9AA0A6;
+  --color-g-text-disabled-dark: #80868B;
+
+  /* Button Secondary */
+  --color-g-btn-secondary: #F1F3F4;
+  --color-g-btn-secondary-dark: #2A2A2A;
 }
 
 @layer base {
   body {
     @apply font-sans antialiased;
+  }
+
+  /* ── Smooth theme transitions ── */
+  html {
+    transition: background-color 200ms ease, color 200ms ease;
   }
 }
 
@@ -42,11 +89,20 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+  background-color: var(--color-g-border);
+  border-radius: 9999px;
+}
+
+:where(.dark, .dark *) .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--color-g-border-dark);
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-600;
+  background-color: var(--color-g-text-disabled);
+}
+
+:where(.dark, .dark *) .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-g-text-secondary-dark);
 }
 
 /* ── Details panel transition ── */
