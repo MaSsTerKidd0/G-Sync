@@ -50,7 +50,7 @@ export function InlineRename({ currentName, onSubmit, onCancel }: InlineRenamePr
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={handleKeyDown}
       onBlur={submit}
-      className="bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-200 text-sm px-1.5 py-0.5 rounded outline-none ring-1 ring-blue-500 dark:ring-blue-400 w-full min-w-0"
+      className="bg-g-btn-secondary dark:bg-g-btn-secondary-dark text-g-text dark:text-g-text-dark text-sm px-1.5 py-0.5 rounded outline-none ring-1 ring-g-primary dark:ring-g-primary-dark w-full min-w-0"
     />
   )
 }

@@ -17,8 +17,8 @@ export function DroppableBreadcrumb({ folderId, onClick, children }: DroppableBr
     <button
       ref={setNodeRef}
       onClick={onClick}
-      className={`hover:text-gray-700 dark:hover:text-gray-300 transition max-w-[150px] truncate ${
-        isOver ? 'text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-600/20 rounded px-1.5 py-0.5 -mx-1.5 -my-0.5' : ''
+      className={`hover:text-g-text dark:hover:text-g-text-dark transition max-w-[150px] truncate ${
+        isOver ? 'text-g-primary dark:text-g-primary-dark bg-g-primary/8 dark:bg-g-primary-dark/10 rounded px-1.5 py-0.5 -mx-1.5 -my-0.5' : ''
       }`}
     >
       {children}

@@ -96,7 +96,7 @@ export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose, onClear 
 
   return (
     <div className="border-t border-g-border dark:border-g-border-dark bg-g-surface dark:bg-g-btn-secondary-dark/70 max-h-[200px] overflow-auto">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 bg-gray-50/90 dark:bg-gray-800/90 backdrop-blur">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-g-border/50 dark:border-g-border-dark/50 sticky top-0 bg-g-surface/90 dark:bg-g-btn-secondary-dark/90 backdrop-blur">
         <span className="text-sm font-medium text-g-text dark:text-g-text-dark">Operations ({visibleOps.length})</span>
         <div className="flex items-center gap-2">
           {hasCompleted && onClear && (
@@ -120,17 +120,17 @@ export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose, onClear 
         const showActions = op.status === 'failed' || op.status === 'needs_user'
 
         return (
-          <div key={op.opId} className="flex items-center gap-3 px-4 py-2 text-xs border-b border-gray-200/30 dark:border-gray-700/30 last:border-b-0">
-            <span className="flex-shrink-0 w-5 text-center text-gray-400">{opTypeIcon(op.opType)}</span>
+          <div key={op.opId} className="flex items-center gap-3 px-4 py-2 text-xs border-b border-g-border/30 dark:border-g-border-dark/30 last:border-b-0">
+            <span className="flex-shrink-0 w-5 text-center text-g-text-disabled dark:text-g-text-disabled-dark">{opTypeIcon(op.opType)}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 dark:text-gray-300 truncate">{opTypeLabel(op.opType)}</span>
-                <span className="text-gray-500 truncate" title={getFileName(op)}>
+                <span className="text-g-text dark:text-g-text-dark truncate">{opTypeLabel(op.opType)}</span>
+                <span className="text-g-text-secondary dark:text-g-text-secondary-dark truncate" title={getFileName(op)}>
                   {getFileName(op).slice(0, 30)}
                 </span>
               </div>
               {op.lastErrorMessage && showActions && (
-                <div className="text-[10px] text-red-400/80 mt-0.5 truncate" title={op.lastErrorMessage}>
+                <div className="text-[10px] text-g-secondary/80 dark:text-g-secondary-dark/80 mt-0.5 truncate" title={op.lastErrorMessage}>
                   {op.lastErrorMessage}
                 </div>
               )}
@@ -138,28 +138,28 @@ export function OpsPanel({ ops, onRetry, onRollback, onCancel, onClose, onClear 
             <span className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full ${badge.className}`}>
               {badge.text}
             </span>
-            <span className="flex-shrink-0 text-gray-600 w-12 text-right">
+            <span className="flex-shrink-0 text-g-text-secondary dark:text-g-text-secondary-dark w-12 text-right">
               {formatTime(op.updatedAtMs)}
             </span>
             {showActions && (
               <div className="flex-shrink-0 flex items-center gap-1">
                 <button
                   onClick={() => onRetry(op.opId)}
-                  className="px-1.5 py-0.5 text-[10px] text-blue-400 hover:bg-blue-600/15 rounded transition"
+                  className="px-1.5 py-0.5 text-[10px] text-g-primary dark:text-g-primary-dark hover:bg-g-primary/10 dark:hover:bg-g-primary-dark/15 rounded transition"
                   title="Retry"
                 >
                   Retry
                 </button>
                 <button
                   onClick={() => onRollback(op.opId)}
-                  className="px-1.5 py-0.5 text-[10px] text-amber-400 hover:bg-amber-600/15 rounded transition"
+                  className="px-1.5 py-0.5 text-[10px] text-g-accent dark:text-g-accent-dark hover:bg-g-accent/10 dark:hover:bg-g-accent-dark/15 rounded transition"
                   title="Rollback"
                 >
                   Undo
                 </button>
                 <button
                   onClick={() => onCancel(op.opId)}
-                  className="px-1.5 py-0.5 text-[10px] text-gray-400 hover:bg-gray-600/15 rounded transition"
+                  className="px-1.5 py-0.5 text-[10px] text-g-text-disabled dark:text-g-text-disabled-dark hover:bg-g-text-disabled/10 rounded transition"
                   title="Dismiss"
                 >
                   Dismiss

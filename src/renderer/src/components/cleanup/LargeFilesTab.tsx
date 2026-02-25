@@ -129,7 +129,7 @@ export default function LargeFilesTab(): React.JSX.Element {
       {/* Controls */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-500">Minimum size:</span>
+          <span className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark">Minimum size:</span>
           <div className="flex items-center gap-1">
             {SIZE_THRESHOLDS.map((t, idx) => (
               <button
@@ -137,8 +137,8 @@ export default function LargeFilesTab(): React.JSX.Element {
                 onClick={() => setThresholdIdx(idx)}
                 className={`px-3 py-1.5 text-xs rounded-md transition ${
                   idx === thresholdIdx
-                    ? 'bg-blue-50 dark:bg-blue-600/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50 border border-transparent'
+                    ? 'bg-g-primary/8 dark:bg-g-primary-dark/10 text-g-primary dark:text-g-primary-dark border border-g-primary/20 dark:border-g-primary-dark/30'
+                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark/50 border border-transparent'
                 }`}
               >
                 {t.label}
@@ -146,30 +146,30 @@ export default function LargeFilesTab(): React.JSX.Element {
             ))}
           </div>
         </div>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark">
           {totalCount} file{totalCount !== 1 ? 's' : ''} found
         </span>
       </div>
 
       {/* Action bar (shown when items selected) */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-gray-100 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700/50 rounded-lg">
-          <span className="text-xs text-gray-700 dark:text-gray-300">
+        <div className="flex items-center gap-3 mb-3 px-4 py-2 bg-g-surface dark:bg-g-btn-secondary-dark/60 border border-g-border dark:border-g-border-dark/50 rounded-lg">
+          <span className="text-xs text-g-text dark:text-g-text-dark">
             {selected.size} file{selected.size !== 1 ? 's' : ''} selected
-            <span className="text-gray-500 ml-1.5">({formatSize(selectedSize)})</span>
+            <span className="text-g-text-secondary dark:text-g-text-secondary-dark ml-1.5">({formatSize(selectedSize)})</span>
           </span>
           <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={() => handleAction('trash')}
               disabled={processing}
-              className="px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-600/10 hover:bg-amber-100 dark:hover:bg-amber-600/20 border border-amber-200 dark:border-amber-600/30 rounded-md transition disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium text-g-accent dark:text-g-accent-dark bg-g-accent/8 dark:bg-g-accent-dark/10 hover:bg-g-accent/15 dark:hover:bg-g-accent-dark/20 border border-g-accent/20 dark:border-g-accent-dark/30 rounded-md transition disabled:opacity-50"
             >
               Move to Trash
             </button>
             <button
               onClick={() => handleAction('delete')}
               disabled={processing}
-              className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-600/10 hover:bg-red-100 dark:hover:bg-red-600/20 border border-red-200 dark:border-red-600/30 rounded-md transition disabled:opacity-50"
+              className="px-3 py-1.5 text-xs font-medium text-g-secondary dark:text-g-secondary-dark bg-g-secondary/8 dark:bg-g-secondary-dark/10 hover:bg-g-secondary/15 dark:hover:bg-g-secondary-dark/20 border border-g-secondary/20 dark:border-g-secondary-dark/30 rounded-md transition disabled:opacity-50"
             >
               Delete Permanently
             </button>
@@ -179,9 +179,9 @@ export default function LargeFilesTab(): React.JSX.Element {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-lg p-3 text-sm text-red-600 dark:text-red-400 mb-3">
+        <div className="bg-g-secondary/8 dark:bg-g-secondary-dark/10 border border-g-secondary/20 dark:border-g-secondary-dark/30 rounded-lg p-3 text-sm text-g-secondary dark:text-g-secondary-dark mb-3">
           {error}
-          <button onClick={loadFiles} className="ml-3 text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-100 underline">
+          <button onClick={loadFiles} className="ml-3 text-g-secondary dark:text-g-secondary-dark hover:text-g-secondary/80 dark:hover:text-g-secondary-dark/80 underline">
             Retry
           </button>
         </div>
@@ -189,7 +189,7 @@ export default function LargeFilesTab(): React.JSX.Element {
 
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center h-48 text-gray-500">
+        <div className="flex items-center justify-center h-48 text-g-text-secondary dark:text-g-text-secondary-dark">
           <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -197,21 +197,21 @@ export default function LargeFilesTab(): React.JSX.Element {
           Scanning for large files...
         </div>
       ) : files.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-500">
+        <div className="flex flex-col items-center justify-center h-48 text-g-text-secondary dark:text-g-text-secondary-dark">
           <span className="text-4xl mb-3">✨</span>
           <p className="text-sm">No files larger than {threshold.label}</p>
         </div>
       ) : (
         /* File table */
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+        <div className="border border-g-border dark:border-g-border-dark rounded-lg overflow-hidden">
           {/* Table header */}
-          <div className="flex items-center gap-3 px-4 py-2 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+          <div className="flex items-center gap-3 px-4 py-2 bg-g-surface dark:bg-g-btn-secondary-dark/60 border-b border-g-border dark:border-g-border-dark text-[10px] font-medium text-g-text-secondary dark:text-g-text-secondary-dark uppercase tracking-wider">
             <div className="w-6 flex-shrink-0">
               <input
                 type="checkbox"
                 checked={selected.size === files.length && files.length > 0}
                 onChange={selectAll}
-                className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-blue-500"
+                className="rounded border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-btn-secondary-dark text-g-primary"
               />
             </div>
             <div className="flex-1 min-w-0">Name</div>
@@ -226,8 +226,8 @@ export default function LargeFilesTab(): React.JSX.Element {
             return (
               <div
                 key={file.id}
-                className={`flex items-center gap-3 px-4 py-2 text-xs border-b border-gray-100 dark:border-gray-700/30 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-700/20 transition cursor-pointer ${
-                  isSelected ? 'bg-blue-50 dark:bg-blue-600/10' : ''
+                className={`flex items-center gap-3 px-4 py-2 text-xs border-b border-g-border/30 dark:border-g-border-dark/30 last:border-b-0 hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark/20 transition cursor-pointer ${
+                  isSelected ? 'bg-g-primary/8 dark:bg-g-primary-dark/10' : ''
                 }`}
                 onClick={() => toggleSelect(file.id)}
               >
@@ -237,20 +237,20 @@ export default function LargeFilesTab(): React.JSX.Element {
                     checked={isSelected}
                     onChange={() => toggleSelect(file.id)}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-blue-500"
+                    className="rounded border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-btn-secondary-dark text-g-primary"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-gray-800 dark:text-gray-200 truncate">{file.name}</div>
-                  <div className="text-[10px] text-gray-400 dark:text-gray-600">{file.mimeType.split('/').pop()}</div>
+                  <div className="text-g-text dark:text-g-text-dark truncate">{file.name}</div>
+                  <div className="text-[10px] text-g-text-disabled dark:text-g-text-disabled-dark">{file.mimeType.split('/').pop()}</div>
                 </div>
-                <div className="w-24 text-right text-gray-700 dark:text-gray-300 font-mono">
+                <div className="w-24 text-right text-g-text dark:text-g-text-dark font-mono">
                   {formatSize(file.sizeBytes)}
                 </div>
-                <div className="w-28 text-right text-gray-500">
+                <div className="w-28 text-right text-g-text-secondary dark:text-g-text-secondary-dark">
                   {formatDate(file.modifiedTimeMs)}
                 </div>
-                <div className="w-48 text-right text-gray-400 dark:text-gray-600 truncate" title={file.parentPath}>
+                <div className="w-48 text-right text-g-text-disabled dark:text-g-text-disabled-dark truncate" title={file.parentPath}>
                   {file.parentPath}
                 </div>
               </div>

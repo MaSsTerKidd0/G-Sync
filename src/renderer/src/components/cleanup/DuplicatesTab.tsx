@@ -193,7 +193,7 @@ export default function DuplicatesTab(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-500">
+      <div className="flex items-center justify-center h-64 text-g-text-secondary dark:text-g-text-secondary-dark">
         <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24" fill="none">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -206,9 +206,9 @@ export default function DuplicatesTab(): React.JSX.Element {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-lg p-4 text-sm text-red-600 dark:text-red-400">
+        <div className="bg-g-secondary/8 dark:bg-g-secondary-dark/10 border border-g-secondary/20 dark:border-g-secondary-dark/30 rounded-lg p-4 text-sm text-g-secondary dark:text-g-secondary-dark">
           {error}
-          <button onClick={loadGroups} className="ml-3 text-red-500 dark:text-red-300 hover:text-red-700 dark:hover:text-red-100 underline">
+          <button onClick={loadGroups} className="ml-3 text-g-secondary dark:text-g-secondary-dark hover:text-g-secondary/80 dark:hover:text-g-secondary-dark/80 underline">
             Retry
           </button>
         </div>
@@ -218,10 +218,10 @@ export default function DuplicatesTab(): React.JSX.Element {
 
   if (groups.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-gray-500">
+      <div className="flex flex-col items-center justify-center h-64 text-g-text-secondary dark:text-g-text-secondary-dark">
         <span className="text-4xl mb-3">✨</span>
         <p className="text-sm">No duplicate files found</p>
-        <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">Your Drive is clean!</p>
+        <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark mt-1">Your Drive is clean!</p>
       </div>
     )
   }
@@ -231,10 +231,10 @@ export default function DuplicatesTab(): React.JSX.Element {
       {/* Summary header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          <h3 className="text-sm font-medium text-g-text dark:text-g-text-dark">
             {groups.length} duplicate group{groups.length !== 1 ? 's' : ''} found
           </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark mt-0.5">
             Files with matching names, sizes, and types
           </p>
         </div>
@@ -242,7 +242,7 @@ export default function DuplicatesTab(): React.JSX.Element {
           <button
             onClick={handleCleanup}
             disabled={processing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-400 text-white text-sm font-medium rounded-lg transition"
+            className="flex items-center gap-2 px-4 py-2 bg-g-primary hover:bg-g-primary/90 disabled:bg-g-primary/50 disabled:text-white/60 text-white text-sm font-medium rounded-lg transition"
           >
             {processing ? (
               <>
@@ -255,7 +255,7 @@ export default function DuplicatesTab(): React.JSX.Element {
             ) : (
               <>
                 Clean up {totalActionable} file{totalActionable !== 1 ? 's' : ''}
-                <span className="text-blue-200 text-xs">({formatSize(totalReclaimable)})</span>
+                <span className="text-white/70 text-xs">({formatSize(totalReclaimable)})</span>
               </>
             )}
           </button>
@@ -270,40 +270,40 @@ export default function DuplicatesTab(): React.JSX.Element {
         const wastedSize = group.totalSize - group.sizeBytes // total minus one copy
 
         return (
-          <div key={key} className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800/40 overflow-hidden">
+          <div key={key} className="border border-g-border dark:border-g-border-dark rounded-lg bg-g-bg dark:bg-g-btn-secondary-dark/40 overflow-hidden">
             {/* Group header — clickable to expand */}
             <button
               onClick={() => toggleGroup(group)}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700/30 transition"
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark/30 transition"
             >
-              <span className={`text-gray-400 dark:text-gray-500 transition-transform ${expanded ? 'rotate-90' : ''}`}>
+              <span className={`text-g-text-disabled dark:text-g-text-disabled-dark transition-transform ${expanded ? 'rotate-90' : ''}`}>
                 ▶
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-800 dark:text-gray-200 truncate">{group.nameNorm}</span>
+                  <span className="text-sm text-g-text dark:text-g-text-dark truncate">{group.nameNorm}</span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                     group.confidence === 'high'
-                      ? 'text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-600/15'
-                      : 'text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-600/15'
+                      ? 'text-g-success dark:text-g-success-dark bg-g-success/10 dark:bg-g-success-dark/15'
+                      : 'text-g-accent dark:text-g-accent-dark bg-g-accent/10 dark:bg-g-accent-dark/15'
                   }`}>
                     {group.confidence === 'high' ? 'High confidence' : 'Medium confidence'}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                <div className="flex items-center gap-3 text-xs text-g-text-secondary dark:text-g-text-secondary-dark mt-0.5">
                   <span>{group.fileCount} copies</span>
                   <span>{formatSize(group.sizeBytes)} each</span>
-                  <span className="text-amber-500 dark:text-amber-400/80">~{formatSize(wastedSize)} wasted</span>
+                  <span className="text-g-accent dark:text-g-accent-dark/80">~{formatSize(wastedSize)} wasted</span>
                 </div>
               </div>
-              <span className="text-xs text-gray-400 dark:text-gray-600">{group.mimeType.split('/').pop()}</span>
+              <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">{group.mimeType.split('/').pop()}</span>
             </button>
 
             {/* Expanded detail */}
             {expanded && (
-              <div className="border-t border-gray-200 dark:border-gray-700/50 px-4 py-2">
+              <div className="border-t border-g-border dark:border-g-border-dark/50 px-4 py-2">
                 {state?.loading ? (
-                  <div className="py-4 text-center text-gray-500 text-xs">Loading details...</div>
+                  <div className="py-4 text-center text-g-text-secondary dark:text-g-text-secondary-dark text-xs">Loading details...</div>
                 ) : state?.detail ? (
                   <div className="space-y-1.5">
                     {state.detail.files.map((file) => {
@@ -313,15 +313,15 @@ export default function DuplicatesTab(): React.JSX.Element {
                           key={file.id}
                           className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs ${
                             decision === 'keep'
-                              ? 'bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800/30'
+                              ? 'bg-g-success/8 dark:bg-g-success-dark/10 border border-g-success/20 dark:border-g-success-dark/30'
                               : decision === 'trash'
-                                ? 'bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/30'
-                                : 'bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700/30'
+                                ? 'bg-g-secondary/8 dark:bg-g-secondary-dark/10 border border-g-secondary/20 dark:border-g-secondary-dark/30'
+                                : 'bg-g-surface dark:bg-g-btn-secondary-dark/30 border border-g-border dark:border-g-border-dark/30'
                           }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="text-gray-700 dark:text-gray-300 truncate">{file.name}</div>
-                            <div className="flex items-center gap-3 text-gray-500 mt-0.5">
+                            <div className="text-g-text dark:text-g-text-dark truncate">{file.name}</div>
+                            <div className="flex items-center gap-3 text-g-text-secondary dark:text-g-text-secondary-dark mt-0.5">
                               <span title={file.parentPath}>{file.parentPath}</span>
                               <span>{formatDate(file.modifiedTimeMs)}</span>
                               <span>{file.sizeBytes != null ? formatSize(file.sizeBytes) : '—'}</span>
@@ -334,8 +334,8 @@ export default function DuplicatesTab(): React.JSX.Element {
                               onClick={() => setDecision(key, file.id, 'keep')}
                               className={`px-2 py-1 rounded text-[10px] font-medium transition ${
                                 decision === 'keep'
-                                  ? 'bg-green-100 dark:bg-green-600/20 text-green-600 dark:text-green-400 border border-green-300 dark:border-green-600/40'
-                                  : 'text-gray-400 dark:text-gray-500 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-600/10'
+                                  ? 'bg-g-success/15 dark:bg-g-success-dark/20 text-g-success dark:text-g-success-dark border border-g-success/30 dark:border-g-success-dark/40'
+                                  : 'text-g-text-disabled dark:text-g-text-disabled-dark hover:text-g-success dark:hover:text-g-success-dark hover:bg-g-success/8 dark:hover:bg-g-success-dark/10'
                               }`}
                             >
                               Keep
@@ -344,8 +344,8 @@ export default function DuplicatesTab(): React.JSX.Element {
                               onClick={() => setDecision(key, file.id, 'trash')}
                               className={`px-2 py-1 rounded text-[10px] font-medium transition ${
                                 decision === 'trash'
-                                  ? 'bg-amber-100 dark:bg-amber-600/20 text-amber-600 dark:text-amber-400 border border-amber-300 dark:border-amber-600/40'
-                                  : 'text-gray-400 dark:text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-600/10'
+                                  ? 'bg-g-accent/15 dark:bg-g-accent-dark/20 text-g-accent dark:text-g-accent-dark border border-g-accent/30 dark:border-g-accent-dark/40'
+                                  : 'text-g-text-disabled dark:text-g-text-disabled-dark hover:text-g-accent dark:hover:text-g-accent-dark hover:bg-g-accent/8 dark:hover:bg-g-accent-dark/10'
                               }`}
                             >
                               Trash
@@ -354,8 +354,8 @@ export default function DuplicatesTab(): React.JSX.Element {
                               onClick={() => setDecision(key, file.id, 'delete')}
                               className={`px-2 py-1 rounded text-[10px] font-medium transition ${
                                 decision === 'delete'
-                                  ? 'bg-red-100 dark:bg-red-600/20 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-600/40'
-                                  : 'text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-600/10'
+                                  ? 'bg-g-secondary/15 dark:bg-g-secondary-dark/20 text-g-secondary dark:text-g-secondary-dark border border-g-secondary/30 dark:border-g-secondary-dark/40'
+                                  : 'text-g-text-disabled dark:text-g-text-disabled-dark hover:text-g-secondary dark:hover:text-g-secondary-dark hover:bg-g-secondary/8 dark:hover:bg-g-secondary-dark/10'
                               }`}
                             >
                               Delete
@@ -366,7 +366,7 @@ export default function DuplicatesTab(): React.JSX.Element {
                     })}
                   </div>
                 ) : (
-                  <div className="py-4 text-center text-gray-500 text-xs">Failed to load details</div>
+                  <div className="py-4 text-center text-g-text-secondary dark:text-g-text-secondary-dark text-xs">Failed to load details</div>
                 )}
               </div>
             )}

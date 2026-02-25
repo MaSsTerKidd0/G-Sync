@@ -18,7 +18,7 @@ function FileTypeIcon({ mimeType, className }: { mimeType: string; className?: s
     return <Music className={`text-pink-400 ${className}`} />
   if (mimeType.includes('pdf'))
     return <FileText className={`text-orange-400 ${className}`} />
-  return <File className={`text-gray-400 dark:text-gray-500 ${className}`} />
+  return <File className={`text-g-text-disabled dark:text-g-text-disabled-dark ${className}`} />
 }
 
 function formatBytes(bytes: number | null): string {
@@ -53,13 +53,13 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
   if (!item) return null
 
   return (
-    <aside className="w-72 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex flex-col shrink-0 animate-slide-in-right">
+    <aside className="w-72 border-l border-g-border dark:border-g-border-dark bg-g-bg dark:bg-g-surface-dark flex flex-col shrink-0 animate-slide-in-right">
       {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-800">
-        <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">Details</h3>
+      <div className="p-4 flex items-center justify-between border-b border-g-border dark:border-g-border-dark">
+        <h3 className="font-bold text-sm text-g-text dark:text-g-text-dark">Details</h3>
         <button
           onClick={onClose}
-          className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
+          className="p-1 text-g-text-disabled dark:text-g-text-disabled-dark hover:text-g-text-secondary dark:hover:text-g-text-secondary-dark hover:bg-g-surface dark:hover:bg-g-btn-secondary-dark rounded-lg transition-all"
         >
           <ChevronRight size={18} />
         </button>
@@ -68,40 +68,40 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
         {/* Icon preview */}
-        <div className="aspect-video bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-700">
+        <div className="aspect-video bg-g-surface dark:bg-g-btn-secondary-dark rounded-xl flex items-center justify-center border border-g-border dark:border-g-border-dark">
           <FileTypeIcon mimeType={item.mimeType} className="w-16 h-16 opacity-30" />
         </div>
 
         {/* Name + type icon + star */}
         <div className="flex items-start gap-3">
           <FileTypeIcon mimeType={item.mimeType} className="w-5 h-5 mt-0.5 shrink-0" />
-          <h4 className="flex-1 font-semibold text-sm text-gray-900 dark:text-gray-100 break-all leading-snug">
+          <h4 className="flex-1 font-semibold text-sm text-g-text dark:text-g-text-dark break-all leading-snug">
             {item.name}
           </h4>
           <button
             onClick={() => onToggleStar?.(item.id, !item.starred)}
             className={`p-1 rounded-md transition-colors shrink-0 ${
               item.starred
-                ? 'text-amber-400 hover:text-amber-500'
-                : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
+                ? 'text-g-accent hover:text-g-accent-dark'
+                : 'text-g-border dark:text-g-border-dark hover:text-g-accent'
             }`}
             title={item.starred ? 'Unstar' : 'Star'}
           >
-            <Star size={16} className={item.starred ? 'fill-amber-400' : ''} />
+            <Star size={16} className={item.starred ? 'fill-g-accent' : ''} />
           </button>
         </div>
 
         {/* Metadata grid */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Type</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+          <div className="p-3 bg-g-surface dark:bg-g-btn-secondary-dark rounded-xl">
+            <p className="text-[10px] font-bold text-g-text-disabled dark:text-g-text-disabled-dark uppercase tracking-wider mb-1">Type</p>
+            <p className="text-xs font-medium text-g-text dark:text-g-text-dark truncate">
               {item.type === 'folder' ? 'Folder' : mimeLabel(item.mimeType)}
             </p>
           </div>
-          <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Size</p>
-            <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+          <div className="p-3 bg-g-surface dark:bg-g-btn-secondary-dark rounded-xl">
+            <p className="text-[10px] font-bold text-g-text-disabled dark:text-g-text-disabled-dark uppercase tracking-wider mb-1">Size</p>
+            <p className="text-xs font-medium text-g-text dark:text-g-text-dark">
               {item.type === 'folder' ? '\u2014' : formatBytes(item.sizeBytes)}
             </p>
           </div>
@@ -110,27 +110,27 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
         {/* Detail rows */}
         <div className="space-y-3 pt-2">
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400 dark:text-gray-500 font-medium">Modified</span>
-            <span className="text-gray-900 dark:text-gray-200 font-medium">
+            <span className="text-g-text-disabled dark:text-g-text-disabled-dark font-medium">Modified</span>
+            <span className="text-g-text dark:text-g-text-dark font-medium">
               {formatDate(item.modifiedTimeMs)}
             </span>
           </div>
           <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-400 dark:text-gray-500 font-medium">MIME</span>
-            <span className="text-gray-600 dark:text-gray-400 font-mono text-[10px] truncate max-w-[150px]">
+            <span className="text-g-text-disabled dark:text-g-text-disabled-dark font-medium">MIME</span>
+            <span className="text-g-text-secondary dark:text-g-text-secondary-dark font-mono text-[10px] truncate max-w-[150px]">
               {item.mimeType}
             </span>
           </div>
           {item.starred && (
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400 dark:text-gray-500 font-medium">Starred</span>
-              <span className="text-amber-500 font-medium">Yes</span>
+              <span className="text-g-text-disabled dark:text-g-text-disabled-dark font-medium">Starred</span>
+              <span className="text-g-accent font-medium">Yes</span>
             </div>
           )}
           {item.trashed && (
             <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-400 dark:text-gray-500 font-medium">Status</span>
-              <span className="text-red-500 font-medium">Trashed</span>
+              <span className="text-g-text-disabled dark:text-g-text-disabled-dark font-medium">Status</span>
+              <span className="text-g-secondary dark:text-g-secondary-dark font-medium">Trashed</span>
             </div>
           )}
         </div>

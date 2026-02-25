@@ -58,7 +58,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative w-10 h-5 rounded-full transition-colors shrink-0 ${
-        checked ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
+        checked ? 'bg-g-primary' : 'bg-g-border dark:bg-g-border-dark'
       }`}
     >
       <div
@@ -149,25 +149,25 @@ export default function SettingsPanel(): React.JSX.Element {
   return (
     <div className="max-w-3xl mx-auto">
       {/* Appearance Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Sun size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <Sun size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Appearance
           </h3>
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600 dark:text-gray-400">Theme</span>
-          <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+          <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Theme</span>
+          <div className="flex items-center bg-g-btn-secondary dark:bg-g-btn-secondary-dark p-1 rounded-lg">
             {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
               <button
                 key={value}
                 onClick={() => setTheme(value)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${
                   theme === value
-                    ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark font-medium'
+                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
                 }`}
               >
                 <Icon size={14} />
@@ -179,10 +179,10 @@ export default function SettingsPanel(): React.JSX.Element {
       </section>
 
       {/* Sync Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <RefreshCw size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <RefreshCw size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Sync
           </h3>
         </div>
@@ -191,15 +191,15 @@ export default function SettingsPanel(): React.JSX.Element {
           {/* Polling interval */}
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Polling interval</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Polling interval</span>
+              <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark mt-0.5">
                 How often to check for Drive changes
               </p>
             </div>
             <select
               value={settings.polling_interval_ms ?? '30000'}
               onChange={(e) => handleSettingChange('polling_interval_ms', e.target.value)}
-              className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="px-3 py-1.5 rounded-lg bg-g-btn-secondary dark:bg-g-btn-secondary-dark border border-g-border dark:border-g-border-dark text-sm text-g-text dark:text-g-text-dark focus:outline-none focus:ring-2 focus:ring-g-primary/40"
             >
               {POLLING_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -212,8 +212,8 @@ export default function SettingsPanel(): React.JSX.Element {
           {/* Notify on sync complete */}
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Notify on sync complete</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Notify on sync complete</span>
+              <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark mt-0.5">
                 Desktop notification when initial sync finishes
               </p>
             </div>
@@ -226,18 +226,18 @@ export default function SettingsPanel(): React.JSX.Element {
       </section>
 
       {/* Files Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Eye size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <Eye size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Files
           </h3>
         </div>
 
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Ignore hidden files</span>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Ignore hidden files</span>
+            <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark mt-0.5">
               Hide .git, .DS_Store, and similar in the explorer
             </p>
           </div>
@@ -249,18 +249,18 @@ export default function SettingsPanel(): React.JSX.Element {
       </section>
 
       {/* Authentication Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Lock size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <Lock size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Authentication
           </h3>
         </div>
 
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Keep me signed in</span>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Keep me signed in</span>
+            <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark mt-0.5">
               When disabled, tokens are cleared on app close
             </p>
           </div>
@@ -272,10 +272,10 @@ export default function SettingsPanel(): React.JSX.Element {
       </section>
 
       {/* Security Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Shield size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <Shield size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Security
           </h3>
         </div>
@@ -283,16 +283,16 @@ export default function SettingsPanel(): React.JSX.Element {
         {securityInfo ? (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Token encryption</span>
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Token encryption</span>
               <div className="flex items-center gap-2">
                 <span
                   className={`inline-block w-2 h-2 rounded-full ${
-                    securityInfo.tokenEncrypted ? 'bg-green-500' : 'bg-amber-500'
+                    securityInfo.tokenEncrypted ? 'bg-g-success dark:bg-g-success-dark' : 'bg-g-accent dark:bg-g-accent-dark'
                   }`}
                 />
                 <span
                   className={`text-sm font-medium ${
-                    securityInfo.tokenEncrypted ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'
+                    securityInfo.tokenEncrypted ? 'text-g-success dark:text-g-success-dark' : 'text-g-accent dark:text-g-accent-dark'
                   }`}
                 >
                   {securityInfo.tokenEncrypted ? 'Encrypted' : 'Not encrypted'}
@@ -302,34 +302,34 @@ export default function SettingsPanel(): React.JSX.Element {
 
             {securityInfo.encryptionBackend && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Encryption backend</span>
-                <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">
+                <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Encryption backend</span>
+                <span className="text-sm text-g-text dark:text-g-text-dark font-mono">
                   {securityInfo.encryptionBackend}
                 </span>
               </div>
             )}
 
             {securityInfo.warning && (
-              <div className="mt-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
-                <p className="text-xs text-amber-700 dark:text-amber-400">{securityInfo.warning}</p>
+              <div className="mt-2 p-3 rounded-lg bg-g-accent/10 dark:bg-g-accent-dark/10 border border-g-accent/20 dark:border-g-accent-dark/30">
+                <p className="text-xs text-g-accent dark:text-g-accent-dark">{securityInfo.warning}</p>
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Database size</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300">{formatSize(securityInfo.dbSizeBytes)}</span>
+            <div className="flex items-center justify-between pt-2 border-t border-g-border dark:border-g-border-dark">
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Database size</span>
+              <span className="text-sm text-g-text dark:text-g-text-dark">{formatSize(securityInfo.dbSizeBytes)}</span>
             </div>
           </div>
         ) : (
-          <div className="text-sm text-gray-400 dark:text-gray-500">Loading security info...</div>
+          <div className="text-sm text-g-text-disabled dark:text-g-text-disabled-dark">Loading security info...</div>
         )}
       </section>
 
       {/* Data Management Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Database size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <Database size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
             Data Management
           </h3>
         </div>
@@ -340,7 +340,7 @@ export default function SettingsPanel(): React.JSX.Element {
               <button
                 onClick={handleCreateBackup}
                 disabled={backingUp}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-sm font-medium text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-g-primary hover:bg-g-primary/90 disabled:bg-g-primary/50 disabled:cursor-not-allowed text-sm font-medium text-white rounded-lg transition-colors"
               >
                 {backingUp ? (
                   <span className="flex items-center gap-2">
@@ -354,7 +354,7 @@ export default function SettingsPanel(): React.JSX.Element {
 
               <button
                 onClick={handleOpenDataFolder}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-medium text-g-text dark:text-g-text-dark hover:text-g-text dark:hover:text-white border border-g-border dark:border-g-border-dark hover:border-g-text-disabled dark:hover:border-g-text-disabled-dark rounded-lg transition-colors"
               >
                 Open Data Folder
               </button>
@@ -363,7 +363,7 @@ export default function SettingsPanel(): React.JSX.Element {
             {backupMessage && (
               <p
                 className={`text-xs mt-1 ${
-                  backupMessage.startsWith('Backup failed') ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                  backupMessage.startsWith('Backup failed') ? 'text-g-secondary dark:text-g-secondary-dark' : 'text-g-success dark:text-g-success-dark'
                 }`}
               >
                 {backupMessage}
@@ -372,17 +372,17 @@ export default function SettingsPanel(): React.JSX.Element {
 
             {backups.length > 0 && (
               <div className="mt-3">
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark mb-2">
                   Recent backups (last {backups.length}):
                 </p>
                 <div className="space-y-1">
                   {backups.map((b) => (
                     <div
                       key={b.path}
-                      className="flex items-center justify-between text-xs py-1.5 px-3 rounded bg-gray-50 dark:bg-gray-700/30"
+                      className="flex items-center justify-between text-xs py-1.5 px-3 rounded bg-g-surface dark:bg-g-btn-secondary-dark/30"
                     >
-                      <span className="text-gray-600 dark:text-gray-400">{formatDate(b.createdAt)}</span>
-                      <span className="text-gray-400 dark:text-gray-500">{formatSize(b.sizeBytes)}</span>
+                      <span className="text-g-text-secondary dark:text-g-text-secondary-dark">{formatDate(b.createdAt)}</span>
+                      <span className="text-g-text-disabled dark:text-g-text-disabled-dark">{formatSize(b.sizeBytes)}</span>
                     </div>
                   ))}
                 </div>
@@ -390,15 +390,15 @@ export default function SettingsPanel(): React.JSX.Element {
             )}
           </div>
 
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="pt-4 border-t border-g-border dark:border-g-border-dark">
             <div className="flex items-center gap-3">
               <button
                 onClick={handleResetLocalData}
                 disabled={resetting}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   resetConfirm
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20'
+                    ? 'bg-g-secondary hover:bg-g-secondary/90 text-white'
+                    : 'bg-g-secondary/8 dark:bg-g-secondary-dark/10 border border-g-secondary/20 dark:border-g-secondary-dark/30 text-g-secondary dark:text-g-secondary-dark hover:bg-g-secondary/15 dark:hover:bg-g-secondary-dark/20'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {resetting
@@ -410,14 +410,14 @@ export default function SettingsPanel(): React.JSX.Element {
               {resetConfirm && !resetting && (
                 <button
                   onClick={() => setResetConfirm(false)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                  className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark transition-colors"
                 >
                   Cancel
                 </button>
               )}
             </div>
             {resetConfirm && (
-              <p className="text-xs text-red-500 dark:text-red-400/80 mt-2">
+              <p className="text-xs text-g-secondary dark:text-g-secondary-dark/80 mt-2">
                 This will delete all local data, disconnect your account, and return the app to its
                 initial state. This action cannot be undone.
               </p>
@@ -427,29 +427,29 @@ export default function SettingsPanel(): React.JSX.Element {
       </section>
 
       {/* About Section */}
-      <section className="mb-6 rounded-xl bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 p-6">
+      <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Info size={16} className="text-gray-400" />
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">About</h3>
+          <Info size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">About</h3>
         </div>
 
         {appInfo ? (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">G-Sync version</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{appInfo.version}</span>
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">G-Sync version</span>
+              <span className="text-sm text-g-text dark:text-g-text-dark font-mono">{appInfo.version}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Electron</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{appInfo.electronVersion}</span>
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Electron</span>
+              <span className="text-sm text-g-text dark:text-g-text-dark font-mono">{appInfo.electronVersion}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Platform</span>
-              <span className="text-sm text-gray-700 dark:text-gray-300 font-mono">{appInfo.platform}</span>
+              <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Platform</span>
+              <span className="text-sm text-g-text dark:text-g-text-dark font-mono">{appInfo.platform}</span>
             </div>
           </div>
         ) : (
-          <div className="text-sm text-gray-400 dark:text-gray-500">Loading...</div>
+          <div className="text-sm text-g-text-disabled dark:text-g-text-disabled-dark">Loading...</div>
         )}
       </section>
     </div>

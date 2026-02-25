@@ -41,11 +41,11 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
 
       {/* Dialog */}
       <div
-        className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden"
+        className="relative bg-g-bg dark:bg-g-surface-dark border border-g-border dark:border-g-border-dark rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-blue-600 to-blue-700 px-6 py-8 text-white">
+        <div className="relative bg-gradient-to-br from-g-primary to-g-primary/85 px-6 py-8 text-white">
           <button
             onClick={() => onDismiss(dontShow)}
             className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/20 transition-colors"
@@ -53,15 +53,15 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
             <X size={18} />
           </button>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles size={20} className="text-blue-200" />
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-200">
+            <Sparkles size={20} className="text-white/70" />
+            <span className="text-xs font-bold uppercase tracking-wider text-white/70">
               Release Notes
             </span>
           </div>
           <h2 className="text-2xl font-bold tracking-tight">
             G-Sync <span className="font-mono">v{version}</span>
           </h2>
-          <p className="text-sm text-blue-200 mt-1">
+          <p className="text-sm text-white/70 mt-1">
             The first official release is here!
           </p>
         </div>
@@ -69,17 +69,17 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
         {/* Content */}
         <div className="px-6 py-5 space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
           <FeatureItem
-            icon={<Star size={16} className="text-amber-500" />}
+            icon={<Star size={16} className="text-g-accent" />}
             title="Star & Unstar Files"
             description="Quickly star your important files directly from the explorer. Stars sync back to Google Drive."
           />
           <FeatureItem
-            icon={<Download size={16} className="text-green-500" />}
+            icon={<Download size={16} className="text-g-success dark:text-g-success-dark" />}
             title="File Downloads"
             description="Download single files or select multiple items and download them as a zip archive."
           />
           <FeatureItem
-            icon={<RefreshCw size={16} className="text-blue-500" />}
+            icon={<RefreshCw size={16} className="text-g-primary dark:text-g-primary-dark" />}
             title="Sync Enhancements"
             description="Configurable polling interval, manual Sync Now button, and desktop notifications on sync completion."
           />
@@ -91,22 +91,22 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div className="px-6 py-4 border-t border-g-border dark:border-g-border-dark flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={dontShow}
               onChange={(e) => setDontShow(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500/40 bg-white dark:bg-gray-700"
+              className="w-4 h-4 rounded border-g-border dark:border-g-border-dark text-g-primary focus:ring-g-primary/40 bg-g-bg dark:bg-g-btn-secondary-dark"
             />
-            <span className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark">
               Don't show until next update
             </span>
           </label>
           <button
             ref={btnRef}
             onClick={() => onDismiss(dontShow)}
-            className="px-5 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="px-5 py-2 text-sm font-medium text-white bg-g-primary hover:bg-g-primary/90 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-g-primary/40"
           >
             Got it
           </button>
@@ -128,12 +128,12 @@ function FeatureItem({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 p-1.5 rounded-lg bg-gray-100 dark:bg-gray-700/50 shrink-0">
+      <div className="mt-0.5 p-1.5 rounded-lg bg-g-surface dark:bg-g-btn-secondary-dark/50 shrink-0">
         {icon}
       </div>
       <div>
-        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{title}</h4>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 leading-relaxed">
+        <h4 className="text-sm font-semibold text-g-text dark:text-g-text-dark">{title}</h4>
+        <p className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark mt-0.5 leading-relaxed">
           {description}
         </p>
       </div>
