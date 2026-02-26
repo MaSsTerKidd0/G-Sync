@@ -340,22 +340,23 @@ export async function downloadFileBuffer(fileId: string, mimeType: string): Prom
 /**
  * DELETE files.delete — permanent deletion.
  */
-export async function deleteFile(fileId: string): Promise<void> {
-  const headers = await getAuthHeaders()
-  const params: Record<string, string> = { supportsAllDrives: 'true' }
-  const qs = new URLSearchParams(params).toString()
-  const url = `${DRIVE_BASE}/files/${encodeURIComponent(fileId)}?${qs}`
+export async function deleteFile(fileId: string, signal?: AbortSignal): Promise<void> {
+  const headers = await getAuthHeaders(); // must include Authorization: Bearer ...
+  const url = new URL(`${DRIVE_BASE}/files/${fileId}`);
+  url.searchParams.set("supportsAllDrives", "true");
 
-  const res = await fetch(url, { method: 'DELETE', headers })
+  const res = await fetch(url.toString(), { method: "DELETE", headers, signal });
 
-  if (!res.ok) {
-    // 404 on delete = already deleted, treat as success
-    if (res.status === 404) return
-    const body = await res.text()
-    throw makeDriveError(res.status, body)
-  }
+  if (res.ok || res.status === 404) return;
+
+  const body = await res.text();
+
+  // Helpful special cases
+  if (res.status === 401) throw new Error("Unauthorized (401): token expired or missing.");
+  if (res.status === 403) throw new Error(`Forbidden (403): missing permission/scope or drive.file limitation. Body: ${body}`);
+
+  throw makeDriveError(res.status, body);
 }
-
 /**
  * DELETE files/trash — permanently delete ALL trashed files.
  * Equivalent to "Empty Trash" in Google Drive.
