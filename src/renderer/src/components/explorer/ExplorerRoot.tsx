@@ -26,7 +26,7 @@ import {
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
-import { Search, Folder, Download, X, Trash2 } from 'lucide-react'
+import { Search, Folder, Download, X, Trash2, Users } from 'lucide-react'
 import type {
   ViewMode,
   SortBy,
@@ -61,6 +61,7 @@ interface ExplorerRootProps {
   sortDir: SortDir
   onSelectedItemChange?: (item: DriveItemDTO | null) => void
   showTrashed?: boolean
+  showShared?: boolean
 }
 
 export default function ExplorerRoot({
@@ -71,11 +72,13 @@ export default function ExplorerRoot({
   sortBy,
   sortDir,
   onSelectedItemChange,
-  showTrashed = false
+  showTrashed = false,
+  showShared = false
 }: ExplorerRootProps) {
   // -- Navigation state --
   const [folderStack, setFolderStack] = useState<BreadcrumbEntry[]>([])
-  const currentFolderId = showTrashed
+  const isSpecialView = showTrashed || showShared
+  const currentFolderId = isSpecialView
     ? 'root'
     : folderStack.length > 0 ? folderStack[folderStack.length - 1]!.id : 'root'
 
@@ -86,7 +89,8 @@ export default function ExplorerRoot({
     sortBy,
     sortDir,
     q: debouncedQuery || undefined,
-    showTrashed
+    showTrashed,
+    showShared
   }
 
   const { items, totalCount, loading, loadMore, hasMore } = useExplorerData(query)
@@ -146,7 +150,7 @@ export default function ExplorerRoot({
   const [isDragging, setIsDragging] = useState(false)
 
   function handleDragStart(event: DragStartEvent) {
-    if (showTrashed) return // no drag-and-drop in trash view
+    if (isSpecialView) return // no drag-and-drop in trash/shared view
     const item = event.active.data.current?.item as DriveItemDTO | undefined
     if (!item) return
     setActiveItem(item)
@@ -295,7 +299,7 @@ export default function ExplorerRoot({
   // -- Navigation --
   const handleOpenItem = useCallback(
     (id: string) => {
-      if (showTrashed) return // no folder navigation in trash view
+      if (isSpecialView) return // no folder navigation in trash/shared view
       const item = items.find((i) => i.id === id)
       if (!item) return
       if (item.type === 'folder') {
@@ -305,7 +309,7 @@ export default function ExplorerRoot({
         setContextMenu(null)
       }
     },
-    [items, showTrashed]
+    [items, isSpecialView]
   )
 
   const navigateUp = useCallback(() => {
@@ -344,9 +348,9 @@ export default function ExplorerRoot({
     (e: React.KeyboardEvent) => {
       if (renamingId) return
 
-      // Backspace / Alt+Left: go up (not in trash view)
+      // Backspace / Alt+Left: go up (not in special views)
       if (
-        !showTrashed &&
+        !isSpecialView &&
         (e.key === 'Backspace' || (e.altKey && e.key === 'ArrowLeft')) &&
         folderStack.length > 0
       ) {
@@ -364,8 +368,8 @@ export default function ExplorerRoot({
         return
       }
 
-      // F2: Rename (only in normal view, not trash)
-      if (!showTrashed && e.key === 'F2' && selection.focusedId && selection.selectedIds.size === 1) {
+      // F2: Rename (only in normal view, not trash/shared)
+      if (!isSpecialView && e.key === 'F2' && selection.focusedId && selection.selectedIds.size === 1) {
         e.preventDefault()
         setRenamingId(selection.focusedId)
         return
@@ -393,6 +397,7 @@ export default function ExplorerRoot({
     },
     [
       renamingId,
+      isSpecialView,
       showTrashed,
       folderStack.length,
       navigateUp,
@@ -471,7 +476,7 @@ export default function ExplorerRoot({
         onKeyDown={handleContainerKeyDown}
         tabIndex={-1}
       >
-        {/* -- Breadcrumbs / Trash header -- */}
+        {/* -- Breadcrumbs / Trash / Shared header -- */}
         {showTrashed ? (
           <div className="flex items-center gap-3 mb-3 flex-shrink-0">
             <div className="flex items-center gap-2 text-sm font-medium text-g-text dark:text-g-text-dark">
@@ -495,6 +500,21 @@ export default function ExplorerRoot({
             {totalCount === 0 && (
               <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark ml-auto">
                 No items in trash
+              </span>
+            )}
+          </div>
+        ) : showShared ? (
+          <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+            <div className="flex items-center gap-2 text-sm font-medium text-g-text dark:text-g-text-dark">
+              <Users size={16} className="text-g-primary dark:text-g-primary-dark" />
+              Shared with me
+            </div>
+            <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+              {totalCount > 0 ? `${totalCount.toLocaleString()} items` : 'No shared items'}
+            </span>
+            {selection.selectedIds.size > 0 && (
+              <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+                &middot; {selection.selectedIds.size} selected
               </span>
             )}
           </div>
@@ -609,6 +629,12 @@ export default function ExplorerRoot({
                   <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">Trash is empty</p>
                   <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Items you delete will appear here</p>
                 </>
+              ) : showShared ? (
+                <>
+                  <Users className="w-16 h-16 text-g-border dark:text-g-border-dark" />
+                  <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">No shared files</p>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Files shared with you by others will appear here</p>
+                </>
               ) : debouncedQuery ? (
                 <>
                   <Search className="w-12 h-12 text-g-border dark:text-g-border-dark" />
@@ -670,13 +696,14 @@ export default function ExplorerRoot({
           isFocusedFolder={focusedItem?.type === 'folder'}
           isFocusedStarred={focusedItem?.starred ?? false}
           isTrashView={showTrashed}
+          isSharedView={showShared}
           canTrashSelection={canTrashSelection}
           canDeleteSelection={canDeleteSelection}
           onOpen={() => {
             if (selection.focusedId) handleOpenItem(selection.focusedId)
           }}
           onRename={() => {
-            if (!showTrashed && selection.focusedId && selection.selectedIds.size === 1) {
+            if (!isSpecialView && selection.focusedId && selection.selectedIds.size === 1) {
               setRenamingId(selection.focusedId)
             }
           }}

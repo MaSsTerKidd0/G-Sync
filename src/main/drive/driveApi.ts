@@ -5,7 +5,7 @@ const DRIVE_BASE = 'https://www.googleapis.com/drive/v3'
 // Fields we request for every file — matches the Phase 2+3 schema
 const FILE_FIELDS = [
   'id', 'name', 'mimeType', 'parents', 'driveId', 'resourceKey',
-  'starred',
+  'starred', 'ownedByMe',
   'trashed', 'explicitlyTrashed',
   'createdTime', 'modifiedTime', 'viewedByMeTime', 'sharedWithMeTime',
   'size',
@@ -28,6 +28,7 @@ export interface DriveFile {
   driveId?: string
   resourceKey?: string
   starred?: boolean
+  ownedByMe?: boolean
   trashed?: boolean
   explicitlyTrashed?: boolean
   createdTime?: string

@@ -17,11 +17,12 @@ import {
   FolderSync,
   Plus,
   X,
-  Trash2
+  Trash2,
+  Users
 } from 'lucide-react'
 import { useTheme, type ThemeOption } from '../../context/ThemeContext'
 
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
 
 interface SidebarProps {
   activeView: ActiveView
@@ -40,6 +41,7 @@ interface SidebarProps {
 
 const NAV_ITEMS: Array<{ id: ActiveView; label: string; icon: typeof HardDrive }> = [
   { id: 'explorer', label: 'My Drive', icon: HardDrive },
+  { id: 'shared', label: 'Shared with me', icon: Users },
   { id: 'trash', label: 'Trash', icon: Trash2 },
   { id: 'smart-tools', label: 'Smart Tools', icon: Sparkles },
   { id: 'settings', label: 'Settings', icon: Settings }
@@ -97,11 +99,20 @@ export default function Sidebar({
     window.gsync.db.trashedCount().then(setTrashedCount).catch(console.error)
   }, [isConnected])
 
-  // Refresh trash count when DB changes
+  // ── Shared with me count ──
+  const [sharedCount, setSharedCount] = useState(0)
+
+  useEffect(() => {
+    if (!isConnected) return
+    window.gsync.db.sharedWithMeCount().then(setSharedCount).catch(console.error)
+  }, [isConnected])
+
+  // Refresh trash + shared counts when DB changes
   useEffect(() => {
     if (!isConnected) return
     const unsub = window.gsync.explorer.onDbChanged(() => {
       window.gsync.db.trashedCount().then(setTrashedCount).catch(console.error)
+      window.gsync.db.sharedWithMeCount().then(setSharedCount).catch(console.error)
     })
     return unsub
   }, [isConnected])
@@ -248,6 +259,11 @@ export default function Sidebar({
               {id === 'trash' && trashedCount > 0 && !disabled && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-g-btn-secondary dark:bg-g-btn-secondary-dark text-g-text-secondary dark:text-g-text-secondary-dark">
                   {trashedCount > 999 ? '999+' : trashedCount}
+                </span>
+              )}
+              {id === 'shared' && sharedCount > 0 && !disabled && (
+                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-g-btn-secondary dark:bg-g-btn-secondary-dark text-g-text-secondary dark:text-g-text-secondary-dark">
+                  {sharedCount > 999 ? '999+' : sharedCount}
                 </span>
               )}
             </button>

@@ -22,7 +22,7 @@ interface CacheEntry {
 }
 
 function cacheKeyFor(query: ExplorerQuery): string {
-  return `${query.parentId}|${query.sortBy}|${query.sortDir}|${query.q ?? ''}|${query.showTrashed ?? false}`
+  return `${query.parentId}|${query.sortBy}|${query.sortDir}|${query.q ?? ''}|${query.showTrashed ?? false}|${query.showShared ?? false}`
 }
 
 // Module-level cache (survives re-renders, cleared on parentId change)
@@ -65,7 +65,8 @@ export function useExplorerData(query: ExplorerQuery): UseExplorerDataResult {
           limit: PAGE_SIZE,
           cursor: cursorArg,
           q: queryRef.current.q,
-          showTrashed: queryRef.current.showTrashed
+          showTrashed: queryRef.current.showTrashed,
+          showShared: queryRef.current.showShared
         })
 
         const dtos = (result.items as DriveItemRow[]).map(rowToDTO)

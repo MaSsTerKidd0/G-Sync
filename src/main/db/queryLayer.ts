@@ -48,9 +48,10 @@ export function listFolderPage(args: {
   cursor?: { sortValue: string | number; id: string }
   q?: string
   showTrashed?: boolean
+  showShared?: boolean
 }): PageResult {
   const db = getDb()
-  const { parentId, sortBy, sortDir, limit, cursor, q, showTrashed } = args
+  const { parentId, sortBy, sortDir, limit, cursor, q, showTrashed, showShared } = args
 
   // Map sortBy to DB column
   const sortCol =
@@ -70,24 +71,33 @@ export function listFolderPage(args: {
   const conditions: string[] = ['di.is_removed = 0']
   const params: (string | number)[] = []
 
-  if (!showTrashed) {
+  if (showTrashed) {
+    // Trash view: show ONLY trashed items (no parent filter — show all trashed regardless of location)
+    conditions.push('di.trashed = 1')
+  } else if (showShared) {
+    // Shared view: show items shared with the user (not owned), flat listing
     conditions.push('di.trashed = 0')
-  }
-
-  if (isRoot) {
-    conditions.push(`(
-      NOT EXISTS (SELECT 1 FROM item_parents ip2 WHERE ip2.child_id = di.id)
-      OR NOT EXISTS (
-        SELECT 1 FROM item_parents ip2
-        JOIN drive_items di2 ON di2.id = ip2.parent_id
-        WHERE ip2.child_id = di.id AND di2.name != '[loading...]'
-      )
-    )`)
+    conditions.push('di.shared_with_me_time_ms IS NOT NULL')
+    conditions.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
   } else {
-    conditions.push(
-      'EXISTS (SELECT 1 FROM item_parents ip WHERE ip.child_id = di.id AND ip.parent_id = ?)'
-    )
-    params.push(parentId)
+    // Normal view: exclude trashed items and apply parent/root filter
+    conditions.push('di.trashed = 0')
+
+    if (isRoot) {
+      conditions.push(`(
+        NOT EXISTS (SELECT 1 FROM item_parents ip2 WHERE ip2.child_id = di.id)
+        OR NOT EXISTS (
+          SELECT 1 FROM item_parents ip2
+          JOIN drive_items di2 ON di2.id = ip2.parent_id
+          WHERE ip2.child_id = di.id AND di2.name != '[loading...]'
+        )
+      )`)
+    } else {
+      conditions.push(
+        'EXISTS (SELECT 1 FROM item_parents ip WHERE ip.child_id = di.id AND ip.parent_id = ?)'
+      )
+      params.push(parentId)
+    }
   }
 
   if (q) {
@@ -127,22 +137,30 @@ export function listFolderPage(args: {
   const countParams: (string | number)[] = []
   const countConds: string[] = ['di.is_removed = 0']
 
-  if (!showTrashed) countConds.push('di.trashed = 0')
-
-  if (isRoot) {
-    countConds.push(`(
-      NOT EXISTS (SELECT 1 FROM item_parents ip2 WHERE ip2.child_id = di.id)
-      OR NOT EXISTS (
-        SELECT 1 FROM item_parents ip2
-        JOIN drive_items di2 ON di2.id = ip2.parent_id
-        WHERE ip2.child_id = di.id AND di2.name != '[loading...]'
-      )
-    )`)
+  if (showTrashed) {
+    countConds.push('di.trashed = 1')
+  } else if (showShared) {
+    countConds.push('di.trashed = 0')
+    countConds.push('di.shared_with_me_time_ms IS NOT NULL')
+    countConds.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
   } else {
-    countConds.push(
-      'EXISTS (SELECT 1 FROM item_parents ip WHERE ip.child_id = di.id AND ip.parent_id = ?)'
-    )
-    countParams.push(parentId)
+    countConds.push('di.trashed = 0')
+
+    if (isRoot) {
+      countConds.push(`(
+        NOT EXISTS (SELECT 1 FROM item_parents ip2 WHERE ip2.child_id = di.id)
+        OR NOT EXISTS (
+          SELECT 1 FROM item_parents ip2
+          JOIN drive_items di2 ON di2.id = ip2.parent_id
+          WHERE ip2.child_id = di.id AND di2.name != '[loading...]'
+        )
+      )`)
+    } else {
+      countConds.push(
+        'EXISTS (SELECT 1 FROM item_parents ip WHERE ip.child_id = di.id AND ip.parent_id = ?)'
+      )
+      countParams.push(parentId)
+    }
   }
 
   if (q) {
@@ -409,4 +427,42 @@ export function markAllTrashedAsRemoved(): void {
   db.prepare(
     `UPDATE drive_items SET is_removed = 1, removed_time_ms = ? WHERE trashed = 1 AND is_removed = 0`
   ).run(now)
+}
+
+/**
+ * Count items shared with the user (not owned by user).
+ */
+export function getSharedWithMeCount(): number {
+  const db = getDb()
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) as cnt FROM drive_items
+       WHERE shared_with_me_time_ms IS NOT NULL
+         AND (owned_by_me = 0 OR owned_by_me IS NULL)
+         AND is_removed = 0
+         AND trashed = 0`
+    )
+    .get() as { cnt: number }
+  return row.cnt
+}
+
+/**
+ * Get items shared with the user (not owned by user).
+ */
+export function getSharedWithMeItems(limit = 50): DriveItemRow[] {
+  const db = getDb()
+  return db
+    .prepare(
+      `
+      SELECT *
+      FROM drive_items
+      WHERE shared_with_me_time_ms IS NOT NULL
+        AND (owned_by_me = 0 OR owned_by_me IS NULL)
+        AND is_removed = 0
+        AND trashed = 0
+      ORDER BY shared_with_me_time_ms DESC
+      LIMIT ?
+    `
+    )
+    .all(limit) as DriveItemRow[]
 }

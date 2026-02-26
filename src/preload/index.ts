@@ -214,7 +214,11 @@ const gsyncApi = {
     updateStarred: (fileId: string, starred: boolean): Promise<void> =>
       ipcRenderer.invoke('db:updateStarred', { fileId, starred }),
     trashedCount: (): Promise<number> =>
-      ipcRenderer.invoke('db:trashedCount')
+      ipcRenderer.invoke('db:trashedCount'),
+    sharedWithMeCount: (): Promise<number> =>
+      ipcRenderer.invoke('db:sharedWithMeCount'),
+    sharedWithMeItems: (limit?: number): Promise<DriveItemRow[]> =>
+      ipcRenderer.invoke('db:sharedWithMeItems', limit)
   },
 
   // ── Phase 3: Explorer API ──
@@ -228,6 +232,7 @@ const gsyncApi = {
       cursor?: { sortValue: string | number; id: string }
       q?: string
       showTrashed?: boolean
+      showShared?: boolean
     }): Promise<PageResult> => ipcRenderer.invoke('explorer:listFolderPage', args),
 
     getThumbnail: (args: {

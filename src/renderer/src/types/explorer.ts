@@ -42,6 +42,7 @@ export interface ExplorerQuery {
   sortDir: SortDir
   q?: string
   showTrashed?: boolean
+  showShared?: boolean
 }
 
 /**

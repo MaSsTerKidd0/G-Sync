@@ -22,7 +22,7 @@ function prepareStatements(db: Database.Database) {
   const upsertItem = db.prepare(`
     INSERT INTO drive_items (
       id, drive_id, name, mime_type, is_folder,
-      starred,
+      starred, owned_by_me,
       trashed, explicitly_trashed,
       created_time_ms, modified_time_ms, viewed_by_me_time_ms, shared_with_me_time_ms,
       size_bytes, resource_key,
@@ -34,7 +34,7 @@ function prepareStatements(db: Database.Database) {
     )
     VALUES (
       @id, @drive_id, @name, @mime_type, @is_folder,
-      @starred,
+      @starred, @owned_by_me,
       @trashed, @explicitly_trashed,
       @created_time_ms, @modified_time_ms, @viewed_by_me_time_ms, @shared_with_me_time_ms,
       @size_bytes, @resource_key,
@@ -50,6 +50,7 @@ function prepareStatements(db: Database.Database) {
       mime_type                   = excluded.mime_type,
       is_folder                   = excluded.is_folder,
       starred                     = excluded.starred,
+      owned_by_me                 = excluded.owned_by_me,
       trashed                     = excluded.trashed,
       explicitly_trashed          = excluded.explicitly_trashed,
       created_time_ms             = excluded.created_time_ms,
@@ -173,6 +174,7 @@ function fileToParams(file: DriveFile) {
     mime_type: file.mimeType,
     is_folder: isFolder,
     starred: boolToInt(file.starred) ?? 0,
+    owned_by_me: boolToInt(file.ownedByMe),
     trashed: boolToInt(file.trashed) ?? 0,
     explicitly_trashed: boolToInt(file.explicitlyTrashed) ?? 0,
     created_time_ms: rfc3339ToMs(file.createdTime),

@@ -23,6 +23,8 @@ import {
   listFolderPage,
   getTrashedItemCount,
   markAllTrashedAsRemoved,
+  getSharedWithMeCount,
+  getSharedWithMeItems,
   type SortBy,
   type SortDir
 } from './db/queryLayer'
@@ -271,6 +273,7 @@ function registerIpcHandlers(): void {
       cursor?: { sortValue: string | number; id: string }
       q?: string
       showTrashed?: boolean
+      showShared?: boolean
     }) => {
       assertNonEmptyString(args?.parentId, 'parentId')
       assertOneOf(args?.sortBy, ['name', 'modifiedTime', 'size'] as const, 'sortBy')
@@ -389,6 +392,14 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('db:trashedCount', () => {
     return getTrashedItemCount()
+  })
+
+  ipcMain.handle('db:sharedWithMeCount', () => {
+    return getSharedWithMeCount()
+  })
+
+  ipcMain.handle('db:sharedWithMeItems', (_e, limit?: number) => {
+    return getSharedWithMeItems(clampMax(limit, 200, 50))
   })
 
   // ── Phase 5: Cleanup / Smart Tools handlers ──

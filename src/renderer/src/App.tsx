@@ -11,7 +11,7 @@ import PatchNotesModal from './components/PatchNotesModal'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
 type AuthStatus = 'disconnected' | 'connecting' | 'connected'
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
 
 function App(): React.JSX.Element {
   // ── Auth state ──
@@ -312,6 +312,19 @@ function App(): React.JSX.Element {
                   showTrashed
                 />
               </div>
+            ) : activeView === 'shared' ? (
+              <div className="h-full animate-fade-in">
+                <ExplorerRoot
+                  connected={isConnected}
+                  searchQuery={searchQuery}
+                  debouncedQuery={debouncedQuery}
+                  viewMode={viewMode}
+                  sortBy={sortBy}
+                  sortDir={sortDir}
+                  onSelectedItemChange={setSelectedItem}
+                  showShared
+                />
+              </div>
             ) : activeView === 'smart-tools' ? (
               <div className="h-full animate-fade-in overflow-hidden">
                 <CleanupDashboard />
@@ -324,7 +337,7 @@ function App(): React.JSX.Element {
           </div>
 
           {/* Details panel */}
-          {activeView === 'explorer' && selectedItem && (
+          {(activeView === 'explorer' || activeView === 'shared') && selectedItem && (
             <DetailsPanel
               item={selectedItem}
               onClose={() => setSelectedItem(null)}

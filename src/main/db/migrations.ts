@@ -26,6 +26,9 @@ export function runMigrations(): void {
   if (currentVersion < 7) {
     migrateV7()
   }
+  if (currentVersion < 8) {
+    migrateV8()
+  }
 
   console.log('[db] Migrations complete — schema version:', db.pragma('user_version', { simple: true }))
 }
@@ -481,4 +484,25 @@ function migrateV7(): void {
   })()
 
   console.log('[db] Migration v7 applied')
+}
+
+function migrateV8(): void {
+  const db = getDb()
+  console.log('[db] Applying migration v8: owned_by_me column + shared index')
+
+  db.transaction(() => {
+    // ── Add owned_by_me column to drive_items ──
+    db.exec(`ALTER TABLE drive_items ADD COLUMN owned_by_me INTEGER`)
+
+    // ── Partial index for fast "Shared with me" queries ──
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_drive_items_shared_with_me
+      ON drive_items(shared_with_me_time_ms)
+      WHERE shared_with_me_time_ms IS NOT NULL AND is_removed = 0 AND trashed = 0
+    `)
+
+    db.pragma('user_version = 8')
+  })()
+
+  console.log('[db] Migration v8 applied')
 }

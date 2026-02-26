@@ -9,6 +9,7 @@ interface ContextMenuProps {
   isFocusedFolder: boolean
   isFocusedStarred: boolean
   isTrashView?: boolean
+  isSharedView?: boolean
   canTrashSelection: boolean
   canDeleteSelection: boolean
   onOpen: () => void
@@ -39,6 +40,7 @@ export function ContextMenu({
   isFocusedFolder,
   isFocusedStarred,
   isTrashView = false,
+  isSharedView = false,
   canTrashSelection,
   canDeleteSelection,
   onOpen,
@@ -101,6 +103,26 @@ export function ContextMenu({
         label: 'Empty Trash',
         action: () => onEmptyTrash?.(),
         destructive: true
+      }
+    ]
+  } else if (isSharedView) {
+    // ── Shared view context menu (read-only: no rename, no trash) ──
+    items = [
+      {
+        label: 'Open',
+        action: onOpen,
+        disabled: !hasFocusedItem
+      },
+      { label: '', action: () => {}, separator: true },
+      {
+        label: isFocusedStarred ? 'Remove Star' : 'Add Star',
+        action: onToggleStar,
+        disabled: !hasFocusedItem
+      },
+      {
+        label: selectedCount > 1 ? `Download ${selectedCount} items` : 'Download',
+        action: onDownload,
+        disabled: selectedCount === 0
       }
     ]
   } else {
