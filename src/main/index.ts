@@ -6,7 +6,7 @@ import { config } from 'dotenv'
 import icon from '../../resources/icon.png?asset'
 import { startLogin, getAuthStatus, disconnect, refreshAccessToken } from './auth/googleOAuth'
 import { loadTokens, isTokenExpired, getTokenSecurityInfo } from './auth/tokenStore'
-import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension, emptyTrash } from './drive/driveApi'
+import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension, emptyTrash, getAboutInfo, resolveStoragePlan } from './drive/driveApi'
 import { initDatabase, closeDatabase } from './db/database'
 import { runMigrations } from './db/migrations'
 import { syncEngine } from './sync/syncEngine'
@@ -206,6 +206,17 @@ function registerIpcHandlers(): void {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[IPC] drive:listFiles error:', message)
+      throw new Error(message)
+    }
+  })
+
+  ipcMain.handle('drive:getStoragePlan', async () => {
+    try {
+      const about = await getAboutInfo()
+      return resolveStoragePlan(about)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] drive:getStoragePlan error:', message)
       throw new Error(message)
     }
   })

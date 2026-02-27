@@ -36,6 +36,13 @@ function App(): React.JSX.Element {
   const [sortBy, setSortBy] = useState<SortBy>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
 
+  // ── User profile (for account menu) ──
+  const [userProfile, setUserProfile] = useState<{
+    userName: string
+    userEmail: string
+    userPhoto?: string
+  } | null>(null)
+
   // ── Details panel ──
   const [selectedItem, setSelectedItem] = useState<DriveItemDTO | null>(null)
 
@@ -100,6 +107,25 @@ function App(): React.JSX.Element {
       }
     }
   }, [appVersion])
+
+  // Fetch user profile when connected (for account avatar/menu)
+  useEffect(() => {
+    if (authStatus !== 'connected') {
+      setUserProfile(null)
+      return
+    }
+    window.gsync.drive.getStoragePlan()
+      .then((plan) => {
+        setUserProfile({
+          userName: plan.userName,
+          userEmail: plan.userEmail,
+          userPhoto: plan.userPhoto
+        })
+      })
+      .catch((err) => {
+        console.warn('[App] Failed to fetch user profile:', err)
+      })
+  }, [authStatus])
 
   const handleLogin = async (): Promise<void> => {
     setAuthStatus('connecting')
@@ -226,7 +252,6 @@ function App(): React.JSX.Element {
         syncPhase={syncPhase}
         syncCounts={syncCounts}
         onLogin={handleLogin}
-        onDisconnect={handleDisconnect}
         onStartSync={handleStartSync}
         onStopSync={handleStopSync}
         onTriggerSync={handleTriggerSync}
@@ -246,6 +271,12 @@ function App(): React.JSX.Element {
           sortBy={sortBy}
           sortDir={sortDir}
           onSortChange={handleSortChange}
+          isConnected={isConnected}
+          userName={userProfile?.userName}
+          userEmail={userProfile?.userEmail}
+          userPhoto={userProfile?.userPhoto}
+          onDisconnect={handleDisconnect}
+          onViewChange={setActiveView}
         />
 
         {/* Content area */}

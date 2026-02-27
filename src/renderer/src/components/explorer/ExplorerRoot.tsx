@@ -231,14 +231,24 @@ export default function ExplorerRoot({
   // -- Phase 4 / Phase 12: Delete confirmation state --
   const [deleteConfirmIds, setDeleteConfirmIds] = useState<string[] | null>(null)
   const [emptyTrashConfirm, setEmptyTrashConfirm] = useState(false)
+  const [removeAccessConfirmIds, setRemoveAccessConfirmIds] = useState<string[] | null>(null)
 
   const handleTrash = useCallback(() => {
     if (selection.selectedIds.size === 0) return
-    window.gsync.ops.enqueueTrash({
-      fileIds: [...selection.selectedIds],
-      trashed: true
-    })
-  }, [selection.selectedIds])
+    const selectedItems = items.filter((i) => selection.selectedIds.has(i.id))
+    const hasSharedItems = selectedItems.some((i) => !i.ownedByMe)
+
+    if (hasSharedItems) {
+      // Show "remove access" confirmation for shared files
+      setRemoveAccessConfirmIds([...selection.selectedIds])
+    } else {
+      // Owned files: trash directly
+      window.gsync.ops.enqueueTrash({
+        fileIds: [...selection.selectedIds],
+        trashed: true
+      })
+    }
+  }, [selection.selectedIds, items])
 
   const handleRestore = useCallback(() => {
     if (selection.selectedIds.size === 0) return
@@ -262,6 +272,15 @@ export default function ExplorerRoot({
       console.error('[ExplorerRoot] emptyTrash failed:', err)
     }
   }, [])
+
+  const handleRemoveAccessConfirm = useCallback(() => {
+    if (!removeAccessConfirmIds || removeAccessConfirmIds.length === 0) return
+    window.gsync.ops.enqueueTrash({
+      fileIds: removeAccessConfirmIds,
+      trashed: true
+    })
+    setRemoveAccessConfirmIds(null)
+  }, [removeAccessConfirmIds])
 
   // -- Phase 10: Star toggle --
   const handleToggleStar = useCallback((itemId: string, starred: boolean) => {
@@ -368,10 +387,13 @@ export default function ExplorerRoot({
         return
       }
 
-      // F2: Rename (only in normal view, not trash/shared)
+      // F2: Rename (only in normal view, not trash/shared, and only if canEdit)
       if (!isSpecialView && e.key === 'F2' && selection.focusedId && selection.selectedIds.size === 1) {
-        e.preventDefault()
-        setRenamingId(selection.focusedId)
+        const focusedForRename = items.find((i) => i.id === selection.focusedId)
+        if (focusedForRename?.canEdit) {
+          e.preventDefault()
+          setRenamingId(selection.focusedId)
+        }
         return
       }
 
@@ -423,10 +445,17 @@ export default function ExplorerRoot({
       return item ? item.canTrash : false
     })
 
+  // Permanent delete: trust Drive API canDelete capability
   const canDeleteSelection = selection.selectedIds.size > 0 &&
     [...selection.selectedIds].every((id) => {
       const item = items.find((i) => i.id === id)
       return item ? item.canDelete : false
+    })
+
+  const canEditSelection = selection.selectedIds.size > 0 &&
+    [...selection.selectedIds].every((id) => {
+      const item = items.find((i) => i.id === id)
+      return item ? item.canEdit : false
     })
 
   if (!connected) return null
@@ -697,13 +726,15 @@ export default function ExplorerRoot({
           isFocusedStarred={focusedItem?.starred ?? false}
           isTrashView={showTrashed}
           isSharedView={showShared}
+          isFocusedOwned={focusedItem?.ownedByMe ?? true}
           canTrashSelection={canTrashSelection}
           canDeleteSelection={canDeleteSelection}
+          canEditSelection={canEditSelection}
           onOpen={() => {
             if (selection.focusedId) handleOpenItem(selection.focusedId)
           }}
           onRename={() => {
-            if (!isSpecialView && selection.focusedId && selection.selectedIds.size === 1) {
+            if (!isSpecialView && canEditSelection && selection.focusedId && selection.selectedIds.size === 1) {
               setRenamingId(selection.focusedId)
             }
           }}
@@ -719,15 +750,53 @@ export default function ExplorerRoot({
         />
       )}
 
-      {/* -- Delete Confirmation Dialog (trash view only) -- */}
-      {deleteConfirmIds && (
+      {/* -- Delete Confirmation Dialog (ownership-aware) -- */}
+      {deleteConfirmIds && (() => {
+        const selectedItems = items.filter((i) => deleteConfirmIds.includes(i.id))
+        const allCanDelete = selectedItems.every((i) => i.canDelete)
+
+        // Block if any file lacks canDelete capability
+        if (!allCanDelete) {
+          return (
+            <ConfirmDialog
+              title="Cannot delete permanently"
+              message="Some selected files cannot be permanently deleted. You don't have delete permission for these files."
+              confirmLabel="OK"
+              onConfirm={() => setDeleteConfirmIds(null)}
+              onCancel={() => setDeleteConfirmIds(null)}
+            />
+          )
+        }
+
+        const allOwned = selectedItems.every((i) => i.ownedByMe)
+        const count = deleteConfirmIds.length
+        const plural = count > 1 ? 's' : ''
+
+        return (
+          <ConfirmDialog
+            title="Delete permanently?"
+            message={
+              allOwned
+                ? `This will permanently delete ${count} item${plural} for everyone. This action cannot be undone.`
+                : `This will permanently delete ${count} item${plural}. Shared files will be removed from all users. This action cannot be undone.`
+            }
+            confirmLabel="Delete"
+            destructive
+            onConfirm={handleDeletePermanently}
+            onCancel={() => setDeleteConfirmIds(null)}
+          />
+        )
+      })()}
+
+      {/* -- Remove Access Confirmation Dialog (shared files) -- */}
+      {removeAccessConfirmIds && (
         <ConfirmDialog
-          title="Delete permanently?"
-          message={`This will permanently delete ${deleteConfirmIds.length} item${deleteConfirmIds.length > 1 ? 's' : ''}. This action cannot be undone.`}
-          confirmLabel="Delete"
+          title="Remove access?"
+          message={`This will remove your access to ${removeAccessConfirmIds.length} shared item${removeAccessConfirmIds.length > 1 ? 's' : ''}. The file will still exist in the owner's Drive.`}
+          confirmLabel="Remove"
           destructive
-          onConfirm={handleDeletePermanently}
-          onCancel={() => setDeleteConfirmIds(null)}
+          onConfirm={handleRemoveAccessConfirm}
+          onCancel={() => setRemoveAccessConfirmIds(null)}
         />
       )}
 

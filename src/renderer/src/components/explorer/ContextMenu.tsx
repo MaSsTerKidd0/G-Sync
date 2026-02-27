@@ -10,8 +10,10 @@ interface ContextMenuProps {
   isFocusedStarred: boolean
   isTrashView?: boolean
   isSharedView?: boolean
+  isFocusedOwned?: boolean
   canTrashSelection: boolean
   canDeleteSelection: boolean
+  canEditSelection?: boolean
   onOpen: () => void
   onRename: () => void
   onTrash: () => void
@@ -41,8 +43,10 @@ export function ContextMenu({
   isFocusedStarred,
   isTrashView = false,
   isSharedView = false,
+  isFocusedOwned = true,
   canTrashSelection,
   canDeleteSelection,
+  canEditSelection = true,
   onOpen,
   onRename,
   onTrash,
@@ -106,7 +110,7 @@ export function ContextMenu({
       }
     ]
   } else if (isSharedView) {
-    // ── Shared view context menu (read-only: no rename, no trash) ──
+    // ── Shared view context menu ──
     items = [
       {
         label: 'Open',
@@ -123,6 +127,13 @@ export function ContextMenu({
         label: selectedCount > 1 ? `Download ${selectedCount} items` : 'Download',
         action: onDownload,
         disabled: selectedCount === 0
+      },
+      { label: '', action: () => {}, separator: true },
+      {
+        label: selectedCount > 1 ? `Remove ${selectedCount} items` : 'Remove',
+        action: onTrash,
+        disabled: selectedCount === 0 || !canTrashSelection,
+        destructive: true
       }
     ]
   } else {
@@ -149,11 +160,13 @@ export function ContextMenu({
         label: 'Rename',
         shortcut: 'F2',
         action: onRename,
-        disabled: selectedCount !== 1 || !canTrashSelection
+        disabled: selectedCount !== 1 || !canEditSelection
       },
       { label: '', action: () => {}, separator: true },
       {
-        label: selectedCount > 1 ? `Move ${selectedCount} items to Trash` : 'Move to Trash',
+        label: isFocusedOwned === false
+          ? (selectedCount > 1 ? `Remove ${selectedCount} items` : 'Remove')
+          : (selectedCount > 1 ? `Move ${selectedCount} items to Trash` : 'Move to Trash'),
         shortcut: 'Del',
         action: onTrash,
         disabled: selectedCount === 0 || !canTrashSelection

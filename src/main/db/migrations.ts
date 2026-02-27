@@ -29,6 +29,9 @@ export function runMigrations(): void {
   if (currentVersion < 8) {
     migrateV8()
   }
+  if (currentVersion < 9) {
+    migrateV9()
+  }
 
   console.log('[db] Migrations complete — schema version:', db.pragma('user_version', { simple: true }))
 }
@@ -505,4 +508,21 @@ function migrateV8(): void {
   })()
 
   console.log('[db] Migration v8 applied')
+}
+
+function migrateV9(): void {
+  const db = getDb()
+  console.log('[db] Applying migration v9: ownership fields (shared, owner_name, owner_email, can_edit, can_share)')
+
+  db.transaction(() => {
+    db.exec(`ALTER TABLE drive_items ADD COLUMN shared INTEGER NOT NULL DEFAULT 0`)
+    db.exec(`ALTER TABLE drive_items ADD COLUMN owner_name TEXT`)
+    db.exec(`ALTER TABLE drive_items ADD COLUMN owner_email TEXT`)
+    db.exec(`ALTER TABLE drive_items ADD COLUMN can_edit INTEGER`)
+    db.exec(`ALTER TABLE drive_items ADD COLUMN can_share INTEGER`)
+
+    db.pragma('user_version = 9')
+  })()
+
+  console.log('[db] Migration v9 applied')
 }

@@ -22,26 +22,28 @@ function prepareStatements(db: Database.Database) {
   const upsertItem = db.prepare(`
     INSERT INTO drive_items (
       id, drive_id, name, mime_type, is_folder,
-      starred, owned_by_me,
+      starred, owned_by_me, shared,
       trashed, explicitly_trashed,
       created_time_ms, modified_time_ms, viewed_by_me_time_ms, shared_with_me_time_ms,
       size_bytes, resource_key,
       md5_checksum, sha256_checksum, sha1_checksum,
       icon_link, has_thumbnail, thumbnail_version,
       shortcut_target_id, shortcut_target_resource_key,
-      can_move_within_drive, can_delete, can_trash,
+      can_move_within_drive, can_delete, can_trash, can_edit, can_share,
+      owner_name, owner_email,
       is_removed, removed_time_ms
     )
     VALUES (
       @id, @drive_id, @name, @mime_type, @is_folder,
-      @starred, @owned_by_me,
+      @starred, @owned_by_me, @shared,
       @trashed, @explicitly_trashed,
       @created_time_ms, @modified_time_ms, @viewed_by_me_time_ms, @shared_with_me_time_ms,
       @size_bytes, @resource_key,
       @md5_checksum, @sha256_checksum, @sha1_checksum,
       @icon_link, @has_thumbnail, @thumbnail_version,
       @shortcut_target_id, @shortcut_target_resource_key,
-      @can_move_within_drive, @can_delete, @can_trash,
+      @can_move_within_drive, @can_delete, @can_trash, @can_edit, @can_share,
+      @owner_name, @owner_email,
       0, NULL
     )
     ON CONFLICT(id) DO UPDATE SET
@@ -51,6 +53,7 @@ function prepareStatements(db: Database.Database) {
       is_folder                   = excluded.is_folder,
       starred                     = excluded.starred,
       owned_by_me                 = excluded.owned_by_me,
+      shared                      = excluded.shared,
       trashed                     = excluded.trashed,
       explicitly_trashed          = excluded.explicitly_trashed,
       created_time_ms             = excluded.created_time_ms,
@@ -70,6 +73,10 @@ function prepareStatements(db: Database.Database) {
       can_move_within_drive       = excluded.can_move_within_drive,
       can_delete                  = excluded.can_delete,
       can_trash                   = excluded.can_trash,
+      can_edit                    = excluded.can_edit,
+      can_share                   = excluded.can_share,
+      owner_name                  = excluded.owner_name,
+      owner_email                 = excluded.owner_email,
       is_removed                  = 0,
       removed_time_ms             = NULL
   `)
@@ -193,7 +200,12 @@ function fileToParams(file: DriveFile) {
     shortcut_target_resource_key: file.shortcutDetails?.targetResourceKey ?? null,
     can_move_within_drive: boolToInt(file.capabilities?.canMoveItemWithinDrive),
     can_delete: boolToInt(file.capabilities?.canDelete),
-    can_trash: boolToInt(file.capabilities?.canTrash)
+    can_trash: boolToInt(file.capabilities?.canTrash),
+    can_edit: boolToInt(file.capabilities?.canEdit),
+    can_share: boolToInt(file.capabilities?.canShare),
+    shared: boolToInt(file.shared) ?? 0,
+    owner_name: file.owners?.[0]?.displayName ?? null,
+    owner_email: file.owners?.[0]?.emailAddress ?? null
   }
 }
 

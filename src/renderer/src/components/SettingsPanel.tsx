@@ -1,11 +1,10 @@
 /**
- * Settings Panel — Appearance, Sync, Files, Auth, Security, Data Management, About.
- * Now rendered as a main content view (no back button needed).
+ * Settings Panel — Subscription, Sync, Files, Auth, Security, Data Management, About.
+ * Theme is now managed via the account popup menu.
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Sun, Moon, Monitor, Loader2, Shield, Database, Info, RefreshCw, Lock, Eye } from 'lucide-react'
-import { useTheme, type ThemeOption } from '../context/ThemeContext'
+import { Loader2, Shield, Database, Info, RefreshCw, Lock, Eye, Crown, ExternalLink, HardDrive, Trash2 } from 'lucide-react'
 
 interface SecurityInfo {
   tokenEncrypted: boolean
@@ -27,6 +26,23 @@ interface BackupInfo {
   createdAt: number
 }
 
+interface StoragePlanInfo {
+  planName: string
+  limitBytes: number | null
+  usageBytes: number
+  usageInDriveBytes: number
+  usageInDriveTrashBytes: number
+  userName: string
+  userEmail: string
+  userPhoto?: string
+}
+
+const UPGRADE_TIERS = [
+  { name: 'Google One Basic', storage: '100 GB', price: '$1.99/mo' },
+  { name: 'Google One Standard', storage: '200 GB', price: '$2.99/mo' },
+  { name: 'Google One Premium', storage: '2 TB', price: '$9.99/mo' }
+]
+
 function formatSize(bytes: number): string {
   if (bytes === 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB']
@@ -37,12 +53,6 @@ function formatSize(bytes: number): string {
 function formatDate(ms: number): string {
   return new Date(ms).toLocaleString()
 }
-
-const THEME_OPTIONS: Array<{ value: ThemeOption; icon: typeof Sun; label: string }> = [
-  { value: 'light', icon: Sun, label: 'Light' },
-  { value: 'dark', icon: Moon, label: 'Dark' },
-  { value: 'system', icon: Monitor, label: 'System' }
-]
 
 const POLLING_OPTIONS = [
   { value: '10000', label: '10 seconds' },
@@ -71,7 +81,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 export default function SettingsPanel(): React.JSX.Element {
-  const { theme, setTheme } = useTheme()
   const [securityInfo, setSecurityInfo] = useState<SecurityInfo | null>(null)
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null)
   const [backups, setBackups] = useState<BackupInfo[]>([])
@@ -79,6 +88,28 @@ export default function SettingsPanel(): React.JSX.Element {
   const [backupMessage, setBackupMessage] = useState<string | null>(null)
   const [resetConfirm, setResetConfirm] = useState(false)
   const [resetting, setResetting] = useState(false)
+
+  // ── Storage plan ──
+  const [storagePlan, setStoragePlan] = useState<StoragePlanInfo | null>(null)
+  const [storageLoading, setStorageLoading] = useState(false)
+  const [storageError, setStorageError] = useState<string | null>(null)
+
+  const loadStoragePlan = useCallback(async () => {
+    setStorageLoading(true)
+    setStorageError(null)
+    try {
+      const plan = await window.gsync.drive.getStoragePlan()
+      setStoragePlan(plan)
+    } catch (err) {
+      setStorageError(err instanceof Error ? err.message : 'Failed to load storage info')
+    } finally {
+      setStorageLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadStoragePlan()
+  }, [loadStoragePlan])
 
   // ── User preferences ──
   const [settings, setSettings] = useState<Record<string, string>>({})
@@ -148,34 +179,170 @@ export default function SettingsPanel(): React.JSX.Element {
 
   return (
     <div className="max-w-3xl mx-auto">
-      {/* Appearance Section */}
+      {/* Subscription & Storage Section */}
       <section className="mb-6 rounded-xl bg-g-bg dark:bg-g-btn-secondary-dark/50 border border-g-border dark:border-g-border-dark p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Sun size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
+          <Crown size={16} className="text-g-text-disabled dark:text-g-text-disabled-dark" />
           <h3 className="text-sm font-semibold text-g-text dark:text-g-text-dark uppercase tracking-wide">
-            Appearance
+            Subscription & Storage
           </h3>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Theme</span>
-          <div className="flex items-center bg-g-btn-secondary dark:bg-g-btn-secondary-dark p-1 rounded-lg">
-            {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
-              <button
-                key={value}
-                onClick={() => setTheme(value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition-all ${
-                  theme === value
-                    ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark font-medium'
-                    : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
-                }`}
-              >
-                <Icon size={14} />
-                {label}
-              </button>
-            ))}
+        {storageLoading ? (
+          <div className="flex items-center gap-2 text-sm text-g-text-disabled dark:text-g-text-disabled-dark">
+            <Loader2 className="animate-spin h-4 w-4" />
+            Loading storage info...
           </div>
-        </div>
+        ) : storageError ? (
+          <div className="text-sm text-g-text-disabled dark:text-g-text-disabled-dark">
+            <p>Unable to load storage info.</p>
+            <p className="text-xs mt-1">Connect to Google Drive and sync to view your plan.</p>
+          </div>
+        ) : storagePlan ? (
+          <div className="space-y-5">
+            {/* Account info row */}
+            <div className="flex items-center gap-3">
+              {storagePlan.userPhoto ? (
+                <img
+                  src={storagePlan.userPhoto}
+                  alt=""
+                  className="w-10 h-10 rounded-full flex-shrink-0"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-g-primary/15 dark:bg-g-primary-dark/20 flex items-center justify-center flex-shrink-0">
+                  <span className="text-sm font-semibold text-g-primary dark:text-g-primary-dark">
+                    {storagePlan.userName?.[0]?.toUpperCase() ?? '?'}
+                  </span>
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-g-text dark:text-g-text-dark truncate">
+                  {storagePlan.userName || 'Google Account'}
+                </p>
+                <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark truncate">
+                  {storagePlan.userEmail}
+                </p>
+              </div>
+            </div>
+
+            {/* Current plan */}
+            <div className="flex items-center gap-2">
+              <Crown size={14} className="text-g-primary dark:text-g-primary-dark flex-shrink-0" />
+              <span className="text-sm font-medium text-g-text dark:text-g-text-dark">
+                {storagePlan.planName}
+              </span>
+              {storagePlan.limitBytes !== null && (
+                <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+                  — {formatSize(storagePlan.limitBytes)} total
+                </span>
+              )}
+            </div>
+
+            {/* Storage usage bar */}
+            {storagePlan.limitBytes !== null ? (() => {
+              const pct = Math.min(100, (storagePlan.usageBytes / storagePlan.limitBytes!) * 100)
+              const barColor = pct >= 90
+                ? 'bg-g-secondary dark:bg-g-secondary-dark'
+                : pct >= 70
+                  ? 'bg-g-accent dark:bg-g-accent-dark'
+                  : 'bg-g-primary dark:bg-g-primary-dark'
+
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-g-text-secondary dark:text-g-text-secondary-dark">
+                      {formatSize(storagePlan.usageBytes)} of {formatSize(storagePlan.limitBytes!)} used
+                    </span>
+                    <span className={`text-xs font-medium ${
+                      pct >= 90
+                        ? 'text-g-secondary dark:text-g-secondary-dark'
+                        : pct >= 70
+                          ? 'text-g-accent dark:text-g-accent-dark'
+                          : 'text-g-text-disabled dark:text-g-text-disabled-dark'
+                    }`}>
+                      {pct.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-g-border dark:bg-g-border-dark overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${barColor}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })() : (
+              <div className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+                {formatSize(storagePlan.usageBytes)} used (unlimited storage)
+              </div>
+            )}
+
+            {/* Usage breakdown */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-g-surface dark:bg-g-btn-secondary-dark/30">
+                <HardDrive size={14} className="text-g-primary dark:text-g-primary-dark flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Drive</p>
+                  <p className="text-sm font-medium text-g-text dark:text-g-text-dark">
+                    {formatSize(storagePlan.usageInDriveBytes)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-g-surface dark:bg-g-btn-secondary-dark/30">
+                <Trash2 size={14} className="text-g-accent dark:text-g-accent-dark flex-shrink-0" />
+                <div>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Trash</p>
+                  <p className="text-sm font-medium text-g-text dark:text-g-text-dark">
+                    {formatSize(storagePlan.usageInDriveTrashBytes)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Upgrade tiers — shown for Free/Basic/Standard plans */}
+            {['Free', 'Google One Basic', 'Google One Standard'].includes(storagePlan.planName) && (
+              <div className="pt-4 border-t border-g-border dark:border-g-border-dark">
+                <p className="text-xs font-medium text-g-text-secondary dark:text-g-text-secondary-dark mb-3 uppercase tracking-wide">
+                  Upgrade options
+                </p>
+                <div className="space-y-2">
+                  {UPGRADE_TIERS
+                    .filter((tier) => {
+                      // Only show tiers above the current plan
+                      if (storagePlan.planName === 'Free') return true
+                      if (storagePlan.planName === 'Google One Basic') return tier.name !== 'Google One Basic'
+                      if (storagePlan.planName === 'Google One Standard') return tier.name === 'Google One Premium'
+                      return false
+                    })
+                    .map((tier) => (
+                      <div
+                        key={tier.name}
+                        className="flex items-center justify-between p-3 rounded-lg bg-g-surface dark:bg-g-btn-secondary-dark/30 border border-g-border/50 dark:border-g-border-dark/50"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-g-text dark:text-g-text-dark">{tier.name}</p>
+                          <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">{tier.storage}</p>
+                        </div>
+                        <span className="text-xs font-medium text-g-primary dark:text-g-primary-dark">
+                          {tier.price}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Manage storage button */}
+            <button
+              onClick={() => window.open('https://one.google.com/about/plans', '_blank')}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-g-primary dark:text-g-primary-dark bg-g-primary/8 dark:bg-g-primary-dark/10 hover:bg-g-primary/15 dark:hover:bg-g-primary-dark/20 rounded-lg transition-colors"
+            >
+              <ExternalLink size={14} />
+              Manage Storage on Google One
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {/* Sync Section */}

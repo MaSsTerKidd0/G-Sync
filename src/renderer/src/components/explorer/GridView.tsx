@@ -8,7 +8,7 @@
 import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { Star } from 'lucide-react'
+import { Star, Users } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
 import { InlineRename } from './InlineRename'
@@ -179,6 +179,16 @@ const GridCard = React.memo(function GridCard({
             {needsUser && (
               <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-g-accent text-[10px] font-bold text-g-text">!</span>
             )}
+          </div>
+        )}
+        {/* Ownership badge (bottom-left overlay for shared items) */}
+        {!item.ownedByMe && item.ownerName && (
+          <div
+            className="absolute bottom-1.5 left-1.5 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-black/50 text-white text-[9px]"
+            title={`Shared by ${item.ownerName}`}
+          >
+            <Users size={10} />
+            <span className="max-w-[60px] truncate">{item.ownerName.split(' ')[0]}</span>
           </div>
         )}
       </div>

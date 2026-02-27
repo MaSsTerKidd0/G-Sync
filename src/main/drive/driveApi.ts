@@ -5,14 +5,16 @@ const DRIVE_BASE = 'https://www.googleapis.com/drive/v3'
 // Fields we request for every file — matches the Phase 2+3 schema
 const FILE_FIELDS = [
   'id', 'name', 'mimeType', 'parents', 'driveId', 'resourceKey',
-  'starred', 'ownedByMe',
+  'starred', 'ownedByMe', 'shared',
   'trashed', 'explicitlyTrashed',
   'createdTime', 'modifiedTime', 'viewedByMeTime', 'sharedWithMeTime',
   'size',
   'md5Checksum', 'sha256Checksum', 'sha1Checksum',
   'iconLink', 'hasThumbnail', 'thumbnailLink', 'thumbnailVersion',
   'shortcutDetails/targetId', 'shortcutDetails/targetResourceKey',
-  'capabilities/canMoveItemWithinDrive', 'capabilities/canDelete', 'capabilities/canTrash'
+  'capabilities/canMoveItemWithinDrive', 'capabilities/canDelete', 'capabilities/canTrash',
+  'capabilities/canEdit', 'capabilities/canShare',
+  'owners'
 ].join(',')
 
 const FILES_LIST_FIELDS = `nextPageToken,incompleteSearch,files(${FILE_FIELDS})`
@@ -29,6 +31,7 @@ export interface DriveFile {
   resourceKey?: string
   starred?: boolean
   ownedByMe?: boolean
+  shared?: boolean
   trashed?: boolean
   explicitlyTrashed?: boolean
   createdTime?: string
@@ -43,6 +46,7 @@ export interface DriveFile {
   hasThumbnail?: boolean
   thumbnailLink?: string   // short-lived URL — do NOT persist; use main-process proxy
   thumbnailVersion?: string // cache invalidation key
+  owners?: Array<{ displayName?: string; emailAddress?: string; me?: boolean }>
   shortcutDetails?: {
     targetId?: string
     targetResourceKey?: string
@@ -51,6 +55,8 @@ export interface DriveFile {
     canMoveItemWithinDrive?: boolean
     canDelete?: boolean
     canTrash?: boolean
+    canEdit?: boolean
+    canShare?: boolean
   }
 }
 
@@ -510,4 +516,84 @@ export async function getFileMetadata(fileId: string): Promise<DriveFile> {
     fields: FILE_FIELDS,
     supportsAllDrives: 'true'
   })
+}
+
+// ── Drive About / Storage Plan ──
+
+interface DriveAboutInfo {
+  user?: {
+    displayName?: string
+    emailAddress?: string
+    photoLink?: string
+    me?: boolean
+  }
+  storageQuota?: {
+    limit?: string   // int64 string — undefined for unlimited (Workspace)
+    usage?: string   // int64 string
+    usageInDrive?: string
+    usageInDriveTrash?: string
+  }
+}
+
+export interface StoragePlanInfo {
+  planName: string
+  limitBytes: number | null
+  usageBytes: number
+  usageInDriveBytes: number
+  usageInDriveTrashBytes: number
+  userName: string
+  userEmail: string
+  userPhoto?: string
+}
+
+const ABOUT_FIELDS = 'user(displayName,emailAddress,photoLink),storageQuota(limit,usage,usageInDrive,usageInDriveTrash)'
+
+/**
+ * Fetch the authenticated user's Drive about info (profile + storage quota).
+ */
+export async function getAboutInfo(): Promise<DriveAboutInfo> {
+  return driveGet<DriveAboutInfo>('/about', { fields: ABOUT_FIELDS })
+}
+
+/** Known Google Drive plan limits (bytes) → plan name. */
+const PLAN_MAP: Array<{ bytes: number; name: string }> = [
+  { bytes: 15e9,  name: 'Free' },           // 15 GB
+  { bytes: 100e9, name: 'Google One Basic' }, // 100 GB
+  { bytes: 200e9, name: 'Google One Standard' }, // 200 GB
+  { bytes: 2e12,  name: 'Google One Premium' },  // 2 TB
+]
+
+/**
+ * Resolve Drive about info into a renderer-friendly storage plan description.
+ */
+export function resolveStoragePlan(about: DriveAboutInfo): StoragePlanInfo {
+  const quota = about.storageQuota
+  const limitBytes = quota?.limit ? parseInt(quota.limit, 10) : null
+  const usageBytes = quota?.usage ? parseInt(quota.usage, 10) : 0
+  const usageInDriveBytes = quota?.usageInDrive ? parseInt(quota.usageInDrive, 10) : 0
+  const usageInDriveTrashBytes = quota?.usageInDriveTrash ? parseInt(quota.usageInDriveTrash, 10) : 0
+
+  let planName = 'Custom'
+  if (limitBytes === null) {
+    planName = 'Unlimited (Workspace)'
+  } else {
+    // Match with 5% tolerance for rounding differences
+    for (const plan of PLAN_MAP) {
+      if (Math.abs(limitBytes - plan.bytes) / plan.bytes < 0.05) {
+        planName = plan.name
+        break
+      }
+    }
+  }
+
+  return {
+    planName,
+    limitBytes,
+    usageBytes,
+    usageInDriveBytes,
+    usageInDriveTrashBytes,
+    userName: about.user?.displayName ?? '',
+    userEmail: about.user?.emailAddress ?? '',
+    userPhoto: about.user?.photoLink ?? undefined
+  }
 }

@@ -80,8 +80,9 @@ export function listFolderPage(args: {
     conditions.push('di.shared_with_me_time_ms IS NOT NULL')
     conditions.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
   } else {
-    // Normal view: exclude trashed items and apply parent/root filter
+    // My Drive: only owned files, exclude trashed, apply parent/root filter
     conditions.push('di.trashed = 0')
+    conditions.push('di.owned_by_me = 1')
 
     if (isRoot) {
       conditions.push(`(
@@ -145,6 +146,7 @@ export function listFolderPage(args: {
     countConds.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
   } else {
     countConds.push('di.trashed = 0')
+    countConds.push('di.owned_by_me = 1')
 
     if (isRoot) {
       countConds.push(`(

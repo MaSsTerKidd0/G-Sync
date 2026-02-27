@@ -20,6 +20,14 @@ interface DriveItemRow {
   has_thumbnail: number
   thumbnail_version: string | null
   is_removed: number
+  owned_by_me: number | null
+  shared: number
+  owner_name: string | null
+  owner_email: string | null
+  can_delete: number | null
+  can_trash: number | null
+  can_edit: number | null
+  can_share: number | null
 }
 
 interface PageResult {
@@ -145,7 +153,18 @@ const gsyncApi = {
         size?: string
         parents?: string[]
       }>
-    }> => ipcRenderer.invoke('drive:listFiles')
+    }> => ipcRenderer.invoke('drive:listFiles'),
+
+    getStoragePlan: (): Promise<{
+      planName: string
+      limitBytes: number | null
+      usageBytes: number
+      usageInDriveBytes: number
+      usageInDriveTrashBytes: number
+      userName: string
+      userEmail: string
+      userPhoto?: string
+    }> => ipcRenderer.invoke('drive:getStoragePlan')
   },
   sync: {
     start: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke('sync:start'),

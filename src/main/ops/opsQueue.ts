@@ -313,6 +313,18 @@ export function enqueueDelete(args: EnqueueDeleteArgs): { opIds: string[] } {
 
   const run = db.transaction(() => {
     for (const fileId of args.fileIds) {
+      // SAFETY: Only allow permanent delete for files with canDelete capability (from Drive API)
+      const capCheck = db.prepare(
+        'SELECT can_delete FROM drive_items WHERE id = ?'
+      ).get(fileId) as { can_delete: number | null } | undefined
+
+      if (capCheck && capCheck.can_delete !== 1) {
+        console.warn(
+          `[opsQueue] Blocked permanent delete for file ${fileId}: can_delete=${capCheck.can_delete}`
+        )
+        continue // skip — Drive API says no delete permission
+      }
+
       const opId = randomUUID()
       const seq = nextUserSeq()
 

@@ -1,4 +1,4 @@
-import { ChevronRight, Folder, File, FileText, Image, Video, Music, Star } from 'lucide-react'
+import { ChevronRight, Folder, File, FileText, Image, Video, Music, Star, Crown, Users } from 'lucide-react'
 import type { DriveItemDTO } from '../../types/explorer'
 
 interface DetailsPanelProps {
@@ -105,6 +105,59 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
               {item.type === 'folder' ? '\u2014' : formatBytes(item.sizeBytes)}
             </p>
           </div>
+        </div>
+
+        {/* Ownership section */}
+        <div className="p-3 bg-g-surface dark:bg-g-btn-secondary-dark rounded-xl space-y-2">
+          <p className="text-[10px] font-bold text-g-text-disabled dark:text-g-text-disabled-dark uppercase tracking-wider mb-1">
+            Ownership
+          </p>
+          <div className="flex items-center gap-2">
+            {item.ownedByMe ? (
+              <>
+                <Crown size={14} className="text-g-accent flex-shrink-0" />
+                <span className="text-xs font-medium text-g-text dark:text-g-text-dark">You own this file</span>
+              </>
+            ) : (
+              <>
+                <Users size={14} className="text-g-primary dark:text-g-primary-dark flex-shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-xs font-medium text-g-text dark:text-g-text-dark block truncate">
+                    {item.ownerName ?? 'Unknown'}
+                  </span>
+                  {item.ownerEmail && (
+                    <span className="text-[10px] text-g-text-disabled dark:text-g-text-disabled-dark block truncate">
+                      {item.ownerEmail}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Capabilities */}
+        <div className="flex flex-wrap gap-1.5">
+          {item.canEdit && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-g-success/10 text-g-success text-[10px] font-medium">
+              Can edit
+            </span>
+          )}
+          {item.canShare && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-g-primary/10 dark:bg-g-primary-dark/10 text-g-primary dark:text-g-primary-dark text-[10px] font-medium">
+              Can share
+            </span>
+          )}
+          {item.canTrash && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-g-accent/10 text-g-accent text-[10px] font-medium">
+              Can trash
+            </span>
+          )}
+          {item.canDelete && item.ownedByMe && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-g-secondary/10 text-g-secondary text-[10px] font-medium">
+              Can delete
+            </span>
+          )}
         </div>
 
         {/* Detail rows */}

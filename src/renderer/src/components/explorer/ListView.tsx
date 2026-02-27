@@ -8,7 +8,7 @@
 import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { Star } from 'lucide-react'
+import { Star, Users } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
 import { InlineRename } from './InlineRename'
@@ -201,6 +201,16 @@ const ListRow = React.memo(function ListRow({
         <Star size={14} className={item.starred ? 'fill-g-accent' : ''} />
       </button>
 
+      {/* Owner */}
+      <div className="flex-shrink-0 w-24 text-xs text-g-text-secondary dark:text-g-text-secondary-dark text-right truncate flex items-center justify-end gap-1">
+        {!item.ownedByMe && (
+          <Users size={12} className="flex-shrink-0 text-g-text-disabled" />
+        )}
+        <span title={!item.ownedByMe && item.ownerEmail ? item.ownerEmail : undefined}>
+          {item.ownedByMe ? 'me' : (item.ownerName?.split(' ')[0] ?? '\u2014')}
+        </span>
+      </div>
+
       {/* Modified */}
       <div className="flex-shrink-0 w-28 text-xs text-g-text-secondary dark:text-g-text-secondary-dark text-right">
         {formatDate(item.modifiedTimeMs)}
@@ -255,6 +265,7 @@ export default function ListView({
         <div className="w-7" />
         <div className="flex-1 min-w-0">Name</div>
         <div className="w-5" />
+        <div className="w-24 text-right">Owner</div>
         <div className="w-28 text-right">Modified</div>
         <div className="w-20 text-right">Size</div>
       </div>

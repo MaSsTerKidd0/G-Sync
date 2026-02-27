@@ -23,8 +23,15 @@ export interface DriveItemDTO {
   trashed: boolean
   isRemoved: boolean
 
+  ownedByMe: boolean
+  shared: boolean
+  ownerName: string | null
+  ownerEmail: string | null
+
   canDelete: boolean
   canTrash: boolean
+  canEdit: boolean
+  canShare: boolean
 
   iconLink?: string | null
   hasThumbnail?: boolean | null
@@ -93,8 +100,14 @@ export interface DriveItemRow {
   has_thumbnail: number
   thumbnail_version: string | null
   is_removed: number
+  owned_by_me: number | null
+  shared: number
+  owner_name: string | null
+  owner_email: string | null
   can_delete: number | null
   can_trash: number | null
+  can_edit: number | null
+  can_share: number | null
 }
 
 /**
@@ -118,8 +131,15 @@ export function rowToDTO(row: DriveItemRow): DriveItemDTO {
     trashed: row.trashed === 1,
     isRemoved: row.is_removed === 1,
 
+    ownedByMe: row.owned_by_me === 1,
+    shared: (row.shared ?? 0) === 1,
+    ownerName: row.owner_name ?? null,
+    ownerEmail: row.owner_email ?? null,
+
     canDelete: row.can_delete === 1,
     canTrash: row.can_trash === 1,
+    canEdit: row.can_edit === 1,
+    canShare: row.can_share === 1,
 
     iconLink: row.icon_link,
     hasThumbnail: row.has_thumbnail === 1,

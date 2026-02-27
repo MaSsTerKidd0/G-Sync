@@ -19,7 +19,8 @@
       "Bash(npm run typecheck:*)",
       "Bash(echo:*)",
       "Bash(npm uninstall:*)",
-      "Bash(git -C \"/c/Users/דניאל/Desktop/Daniel_Workspace/Projects/G-Sync\" ls-files)"
+      "Bash(git -C \"/c/Users/דניאל/Desktop/Daniel_Workspace/Projects/G-Sync\" ls-files)",
+      "Bash(npm run build:*)"
     ]
   }
 }

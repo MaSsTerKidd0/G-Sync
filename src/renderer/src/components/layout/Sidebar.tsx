@@ -2,11 +2,6 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   HardDrive,
   Sparkles,
-  Settings,
-  Sun,
-  Moon,
-  Monitor,
-  LogOut,
   LogIn,
   Loader2,
   Star,
@@ -20,7 +15,6 @@ import {
   Trash2,
   Users
 } from 'lucide-react'
-import { useTheme, type ThemeOption } from '../../context/ThemeContext'
 
 type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
 
@@ -31,7 +25,6 @@ interface SidebarProps {
   syncPhase: string
   syncCounts: { totalFiles: number; totalFolders: number }
   onLogin: () => void
-  onDisconnect: () => void
   onStartSync: () => void
   onStopSync: () => void
   onTriggerSync: () => void
@@ -43,14 +36,7 @@ const NAV_ITEMS: Array<{ id: ActiveView; label: string; icon: typeof HardDrive }
   { id: 'explorer', label: 'My Drive', icon: HardDrive },
   { id: 'shared', label: 'Shared with me', icon: Users },
   { id: 'trash', label: 'Trash', icon: Trash2 },
-  { id: 'smart-tools', label: 'Smart Tools', icon: Sparkles },
-  { id: 'settings', label: 'Settings', icon: Settings }
-]
-
-const THEME_OPTIONS: Array<{ value: ThemeOption; icon: typeof Sun; label: string }> = [
-  { value: 'light', icon: Sun, label: 'Light' },
-  { value: 'dark', icon: Moon, label: 'Dark' },
-  { value: 'system', icon: Monitor, label: 'System' }
+  { id: 'smart-tools', label: 'Smart Tools', icon: Sparkles }
 ]
 
 const phaseLabel: Record<string, string> = {
@@ -81,14 +67,12 @@ export default function Sidebar({
   syncPhase,
   syncCounts,
   onLogin,
-  onDisconnect,
   onStartSync,
   onStopSync,
   onTriggerSync,
   onNavigateToItem,
   syncing
 }: SidebarProps) {
-  const { theme, setTheme } = useTheme()
   const isConnected = authStatus === 'connected'
 
   // ── Trash count ──
@@ -468,51 +452,25 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* Bottom section */}
-      <div className="p-4 border-t border-g-border/50 dark:border-g-border-dark space-y-3">
-        {/* Theme picker */}
-        <div className="flex items-center bg-g-btn-secondary dark:bg-g-btn-secondary-dark p-1 rounded-lg">
-          {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
+      {/* Bottom section — Login prompt when disconnected */}
+      {!isConnected && (
+        <div className="p-4 border-t border-g-border/50 dark:border-g-border-dark">
+          {authStatus === 'connecting' ? (
+            <div className="flex items-center gap-3 px-3 py-2 text-sm text-g-text-disabled">
+              <Loader2 size={16} className="animate-spin" />
+              Connecting...
+            </div>
+          ) : (
             <button
-              key={value}
-              onClick={() => setTheme(value)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs transition-all ${
-                theme === value
-                  ? 'bg-g-bg dark:bg-g-border-dark shadow-sm text-g-primary dark:text-g-primary-dark font-medium'
-                  : 'text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-text dark:hover:text-g-text-dark'
-              }`}
-              title={label}
+              onClick={onLogin}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-g-text dark:text-g-text-dark bg-g-btn-secondary dark:bg-g-btn-secondary-dark hover:bg-g-border dark:hover:bg-g-border-dark rounded-lg transition-colors"
             >
-              <Icon size={14} />
-              <span className="hidden lg:inline">{label}</span>
+              <LogIn size={16} />
+              Login with Google
             </button>
-          ))}
+          )}
         </div>
-
-        {/* Auth */}
-        {authStatus === 'connected' ? (
-          <button
-            onClick={onDisconnect}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-g-text-secondary dark:text-g-text-secondary-dark hover:text-g-secondary dark:hover:text-g-secondary-dark hover:bg-g-secondary/8 dark:hover:bg-g-secondary-dark/10 rounded-lg transition-colors"
-          >
-            <LogOut size={16} />
-            Disconnect
-          </button>
-        ) : authStatus === 'connecting' ? (
-          <div className="flex items-center gap-3 px-3 py-2 text-sm text-g-text-disabled">
-            <Loader2 size={16} className="animate-spin" />
-            Connecting...
-          </div>
-        ) : (
-          <button
-            onClick={onLogin}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-g-text dark:text-g-text-dark bg-g-btn-secondary dark:bg-g-btn-secondary-dark hover:bg-g-border dark:hover:bg-g-border-dark rounded-lg transition-colors"
-          >
-            <LogIn size={16} />
-            Login with Google
-          </button>
-        )}
-      </div>
+      )}
     </aside>
   )
 }
