@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Sparkles, Star, Download, RefreshCw, X } from 'lucide-react'
+import { Sparkles, FolderSync, Trash2, Share2, Wand2, X } from 'lucide-react'
 
 interface PatchNotesModalProps {
   version: string
@@ -62,31 +62,31 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
             G-Sync <span className="font-mono">v{version}</span>
           </h2>
           <p className="text-sm text-white/70 mt-1">
-            The first official release is here!
+            First public practice release — local-only, not yet OAuth-verified with Google.
           </p>
         </div>
 
         {/* Content */}
         <div className="px-6 py-5 space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
           <FeatureItem
-            icon={<Star size={16} className="text-g-accent" />}
-            title="Star & Unstar Files"
-            description="Quickly star your important files directly from the explorer. Stars sync back to Google Drive."
+            icon={<FolderSync size={16} className="text-g-primary dark:text-g-primary-dark" />}
+            title="Syncable Folders"
+            description="Pick any local folder and have it mirrored two-way with Google Drive in the background. Headline feature of v1.0.0."
           />
           <FeatureItem
-            icon={<Download size={16} className="text-g-success dark:text-g-success-dark" />}
-            title="File Downloads"
-            description="Download single files or select multiple items and download them as a zip archive."
+            icon={<Trash2 size={16} className="text-g-accent" />}
+            title="Trash-First Delete Flow"
+            description="Safer deletes that go to a dedicated Trash view with Restore, Permanent Delete and Empty Trash actions."
           />
           <FeatureItem
-            icon={<RefreshCw size={16} className="text-g-primary dark:text-g-primary-dark" />}
-            title="Sync Enhancements"
-            description="Configurable polling interval, manual Sync Now button, and desktop notifications on sync completion."
+            icon={<Share2 size={16} className="text-g-success dark:text-g-success-dark" />}
+            title="Sharing & Account"
+            description="Shared-with-me tab, share dialog with permission management, and a profile menu with storage plan info."
           />
           <FeatureItem
-            icon={<Sparkles size={16} className="text-purple-500" />}
-            title="Smart Tools & Theming"
-            description="Duplicate finder, large file browser, storage breakdown, and a polished light/dark/system theme."
+            icon={<Wand2 size={16} className="text-purple-500" />}
+            title="Smart Cleanup Tools"
+            description="Duplicate finder, large file browser, storage breakdown, plus star/unstar, zip downloads and a Google-style light/dark theme."
           />
         </div>
 
