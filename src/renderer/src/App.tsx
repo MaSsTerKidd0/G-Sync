@@ -8,7 +8,6 @@ import ExplorerRoot from './components/explorer/ExplorerRoot'
 import PhotosGrid from './components/PhotosGrid'
 import CleanupDashboard from './components/cleanup/CleanupDashboard'
 import SettingsPanel from './components/SettingsPanel'
-import PatchNotesModal from './components/PatchNotesModal'
 import { ShareDialog } from './components/explorer/ShareDialog'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
@@ -51,10 +50,6 @@ function App(): React.JSX.Element {
   // ── Share dialog ──
   const [shareItem, setShareItem] = useState<DriveItemDTO | null>(null)
 
-  // ── Patch notes modal ──
-  const [showPatchNotes, setShowPatchNotes] = useState(false)
-  const [appVersion, setAppVersion] = useState('1.0.0')
-
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
@@ -82,36 +77,6 @@ function App(): React.JSX.Element {
   useEffect(() => {
     checkStatus()
   }, [checkStatus])
-
-  // ── Patch notes version check ──
-  useEffect(() => {
-    async function checkVersion() {
-      try {
-        const [info, lastSeen] = await Promise.all([
-          window.gsync.settings.getAppInfo(),
-          window.gsync.settings.get('last_seen_version')
-        ])
-        setAppVersion(info.version)
-        if (lastSeen !== info.version) {
-          setShowPatchNotes(true)
-        }
-      } catch {
-        // Settings may not be ready
-      }
-    }
-    checkVersion()
-  }, [])
-
-  const handleDismissPatchNotes = useCallback(async (dontShowAgain: boolean) => {
-    setShowPatchNotes(false)
-    if (dontShowAgain) {
-      try {
-        await window.gsync.settings.set('last_seen_version', appVersion)
-      } catch {
-        // non-critical
-      }
-    }
-  }, [appVersion])
 
   // Fetch user profile when connected (for account avatar/menu)
   useEffect(() => {
@@ -398,10 +363,6 @@ function App(): React.JSX.Element {
         />
       </main>
 
-      {/* Patch notes modal */}
-      {showPatchNotes && (
-        <PatchNotesModal version={appVersion} onDismiss={handleDismissPatchNotes} />
-      )}
 
       {/* Share dialog */}
       {shareItem && (

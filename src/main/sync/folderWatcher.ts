@@ -9,7 +9,7 @@
 import { EventEmitter } from 'events'
 import { createHash } from 'crypto'
 import { readFile, stat } from 'fs/promises'
-import { relative, basename } from 'path'
+import { relative } from 'path'
 import { FSWatcher, watch } from 'chokidar'
 import {
   upsertSyncedFile,
@@ -55,9 +55,11 @@ export class FolderWatcher extends EventEmitter {
       return
     }
 
-    const ignored = [...ALWAYS_IGNORED]
+    // chokidar v4 only accepts string globs or matcher functions in `ignored`
+    const ignored: Array<string | ((path: string) => boolean)> = [...ALWAYS_IGNORED]
     if (getIgnoreHiddenFiles()) {
-      ignored.push(/(^|[/\\])\../) // dot-files
+      // Match dot-files / dot-dirs anywhere in the path (Windows + POSIX separators)
+      ignored.push((p: string) => /(^|[/\\])\../.test(p))
     }
 
     const watcher = watch(localPath, {
@@ -79,7 +81,9 @@ export class FolderWatcher extends EventEmitter {
       .on('unlink', (filePath) => this.handleUnlink(folderId, localPath, filePath))
       .on('error', (err) => {
         console.error(`[folderWatcher] Error in ${folderId}:`, err)
-        this.emit('folder:error', { folderId, error: err.message })
+        // err is typed `unknown` in chokidar v4 — narrow safely before reading .message
+        const message = err instanceof Error ? err.message : String(err)
+        this.emit('folder:error', { folderId, error: message })
       })
       .on('ready', () => {
         console.log(`[folderWatcher] Initial scan complete for ${folderId}`)

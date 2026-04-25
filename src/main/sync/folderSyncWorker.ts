@@ -12,8 +12,7 @@ import {
   createDriveFolder,
   uploadFile,
   updateFileContent,
-  getFileMetadata,
-  type DriveFile
+  getFileMetadata
 } from '../drive/driveApi'
 import { throttledDriveCall } from '../drive/rateLimiter'
 import {

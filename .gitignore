@@ -1,7 +1,54 @@
+# Dependencies & build artifacts
 node_modules
 dist
+dist-electron
 out
-.DS_Store
-.eslintcache
+release
+*.tsbuildinfo
+
+# Test / coverage output
+coverage
+.nyc_output
+
+# Logs & caches
 *.log*
+.eslintcache
+.cache
+.parcel-cache
+.vite
+
+# Environment & secrets (keep .env.example tracked)
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Local SQLite / app data that may be created during dev
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.db
+*.db-journal
+
+# Electron-builder output (installers, blockmaps)
+*.exe
+*.dmg
+*.AppImage
+*.snap
+*.deb
+*.blockmap
+
+# Claude Code workspace (local agent state, worktrees, settings)
+.claude/
+

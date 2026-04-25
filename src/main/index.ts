@@ -89,10 +89,7 @@ import {
   addSyncedFolder,
   removeSyncedFolder,
   listSyncedFolders,
-  getSyncedFolder,
-  updateSyncedFileAfterUpload,
-  listPendingFiles,
-  listConflictFiles
+  getSyncedFolder
 } from './db/syncedFoldersStore'
 import { listMediaItemsThrottled } from './photos/photosApi'
 import { folderWatcher } from './sync/folderWatcher'
