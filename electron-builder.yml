@@ -39,8 +39,10 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: true
 
-# Auto-update: configure a real URL before enabling auto-updates.
-# macOS requires code signing + notarization for autoUpdater to work.
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
+# Auto-update is disabled for v1.0.0 (this is a local-only practice release).
+# To enable later: switch `provider` to `github` (for public releases) or back to
+# `generic` with a real URL. macOS auto-updates also need code signing + notarization.
+# publish:
+#   provider: github
+#   owner: MaSsTerKidd0
+#   repo: G-Sync
