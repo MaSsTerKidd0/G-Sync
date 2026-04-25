@@ -281,6 +281,41 @@ export async function updateFile(opts: {
   return res.json() as Promise<DriveFile>
 }
 
+/**
+ * POST files.copy — create an owned copy of a file.
+ * Used for "Make a copy" on shared files so the user gets their own version.
+ */
+export async function copyFile(opts: {
+  fileId: string
+  name?: string
+}): Promise<DriveFile> {
+  const headers = await getAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+
+  const body: Record<string, unknown> = {}
+  if (opts.name) body.name = opts.name
+
+  const qs = new URLSearchParams({
+    fields: FILE_FIELDS,
+    supportsAllDrives: 'true'
+  }).toString()
+
+  const url = `${DRIVE_BASE}/files/${encodeURIComponent(opts.fileId)}/copy?${qs}`
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text()
+    throw makeDriveError(res.status, errBody)
+  }
+
+  return res.json() as Promise<DriveFile>
+}
+
 // ── Phase 10: Download Operations ──
 
 /** Mime types that are Google Workspace docs (cannot be downloaded directly — must be exported). */
@@ -506,6 +541,93 @@ export async function updateFileContent(opts: {
   }
 
   return res.json() as Promise<DriveFile>
+}
+
+// ── Sharing / Permissions Operations ──
+
+export interface DrivePermission {
+  id: string
+  type: string           // 'user' | 'group' | 'domain' | 'anyone'
+  role: string           // 'owner' | 'organizer' | 'fileOrganizer' | 'writer' | 'commenter' | 'reader'
+  emailAddress?: string
+  displayName?: string
+  photoLink?: string
+  deleted?: boolean
+}
+
+const PERMISSION_FIELDS = 'id,type,role,emailAddress,displayName,photoLink,deleted'
+
+/**
+ * List all permissions on a file.
+ */
+export async function listPermissions(fileId: string): Promise<DrivePermission[]> {
+  const data = await driveGet<{ permissions?: DrivePermission[] }>(
+    `/files/${encodeURIComponent(fileId)}/permissions`,
+    {
+      fields: `permissions(${PERMISSION_FIELDS})`,
+      supportsAllDrives: 'true'
+    }
+  )
+  return data.permissions ?? []
+}
+
+/**
+ * Share a file with a user by email.
+ */
+export async function shareFile(opts: {
+  fileId: string
+  email: string
+  role: string // 'reader' | 'writer' | 'commenter'
+}): Promise<DrivePermission> {
+  const headers = await getAuthHeaders()
+  headers['Content-Type'] = 'application/json'
+
+  const body = {
+    type: 'user',
+    role: opts.role,
+    emailAddress: opts.email
+  }
+
+  const qs = new URLSearchParams({
+    fields: PERMISSION_FIELDS,
+    supportsAllDrives: 'true',
+    sendNotificationEmail: 'true'
+  }).toString()
+
+  const url = `${DRIVE_BASE}/files/${encodeURIComponent(opts.fileId)}/permissions?${qs}`
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body)
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text()
+    throw makeDriveError(res.status, errBody)
+  }
+
+  return res.json() as Promise<DrivePermission>
+}
+
+/**
+ * Remove a permission from a file (revoke sharing).
+ */
+export async function unshareFile(fileId: string, permissionId: string): Promise<void> {
+  const headers = await getAuthHeaders()
+
+  const qs = new URLSearchParams({
+    supportsAllDrives: 'true'
+  }).toString()
+
+  const url = `${DRIVE_BASE}/files/${encodeURIComponent(fileId)}/permissions/${encodeURIComponent(permissionId)}?${qs}`
+
+  const res = await fetch(url, { method: 'DELETE', headers })
+
+  if (res.ok || res.status === 404) return
+
+  const errBody = await res.text()
+  throw makeDriveError(res.status, errBody)
 }
 
 /**

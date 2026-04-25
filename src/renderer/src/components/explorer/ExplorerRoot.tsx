@@ -26,7 +26,7 @@ import {
   type DragStartEvent,
   type DragEndEvent
 } from '@dnd-kit/core'
-import { Search, Folder, Download, X, Trash2, Users } from 'lucide-react'
+import { Search, Folder, Download, X, Trash2, Users, Image } from 'lucide-react'
 import type {
   ViewMode,
   SortBy,
@@ -60,8 +60,10 @@ interface ExplorerRootProps {
   sortBy: SortBy
   sortDir: SortDir
   onSelectedItemChange?: (item: DriveItemDTO | null) => void
+  onShareItem?: (item: DriveItemDTO) => void
   showTrashed?: boolean
   showShared?: boolean
+  showMedia?: boolean
 }
 
 export default function ExplorerRoot({
@@ -72,12 +74,14 @@ export default function ExplorerRoot({
   sortBy,
   sortDir,
   onSelectedItemChange,
+  onShareItem,
   showTrashed = false,
-  showShared = false
+  showShared = false,
+  showMedia = false
 }: ExplorerRootProps) {
   // -- Navigation state --
   const [folderStack, setFolderStack] = useState<BreadcrumbEntry[]>([])
-  const isSpecialView = showTrashed || showShared
+  const isSpecialView = showTrashed || showShared || showMedia
   const currentFolderId = isSpecialView
     ? 'root'
     : folderStack.length > 0 ? folderStack[folderStack.length - 1]!.id : 'root'
@@ -90,7 +94,8 @@ export default function ExplorerRoot({
     sortDir,
     q: debouncedQuery || undefined,
     showTrashed,
-    showShared
+    showShared,
+    showMedia
   }
 
   const { items, totalCount, loading, loadMore, hasMore } = useExplorerData(query)
@@ -287,6 +292,33 @@ export default function ExplorerRoot({
     window.gsync.db.updateStarred(itemId, starred)
   }, [])
 
+  // -- Make a copy (shared view) --
+  const handleMakeCopy = useCallback(async () => {
+    if (selection.selectedIds.size !== 1) return
+    const focusedId = selection.focusedId ?? [...selection.selectedIds][0]
+    if (!focusedId) return
+    const item = items.find((i) => i.id === focusedId)
+    if (!item) return
+
+    try {
+      await window.gsync.drive.copyFile({
+        fileId: item.id,
+        name: `Copy of ${item.name}`
+      })
+    } catch (err) {
+      console.error('[ExplorerRoot] copyFile failed:', err)
+    }
+  }, [selection.selectedIds, selection.focusedId, items])
+
+  // -- Share --
+  const handleShare = useCallback(() => {
+    if (selection.selectedIds.size !== 1) return
+    const focusedId = selection.focusedId ?? [...selection.selectedIds][0]
+    if (!focusedId) return
+    const found = items.find((i) => i.id === focusedId)
+    if (found && onShareItem) onShareItem(found)
+  }, [selection.selectedIds, selection.focusedId, items, onShareItem])
+
   // -- Phase 10: Download --
   const handleDownload = useCallback(() => {
     if (selection.selectedIds.size === 0) return
@@ -458,6 +490,12 @@ export default function ExplorerRoot({
       return item ? item.canEdit : false
     })
 
+  const canShareSelection = selection.selectedIds.size > 0 &&
+    [...selection.selectedIds].every((id) => {
+      const item = items.find((i) => i.id === id)
+      return item ? (item.canShare || item.shared) : false
+    })
+
   if (!connected) return null
 
   // -- View content (list / grid) --
@@ -540,6 +578,21 @@ export default function ExplorerRoot({
             </div>
             <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
               {totalCount > 0 ? `${totalCount.toLocaleString()} items` : 'No shared items'}
+            </span>
+            {selection.selectedIds.size > 0 && (
+              <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+                &middot; {selection.selectedIds.size} selected
+              </span>
+            )}
+          </div>
+        ) : showMedia ? (
+          <div className="flex items-center gap-3 mb-3 flex-shrink-0">
+            <div className="flex items-center gap-2 text-sm font-medium text-g-text dark:text-g-text-dark">
+              <Image size={16} className="text-g-primary dark:text-g-primary-dark" />
+              Photos & Videos
+            </div>
+            <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
+              {totalCount > 0 ? `${totalCount.toLocaleString()} items` : 'No media files'}
             </span>
             {selection.selectedIds.size > 0 && (
               <span className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">
@@ -664,6 +717,12 @@ export default function ExplorerRoot({
                   <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">No shared files</p>
                   <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Files shared with you by others will appear here</p>
                 </>
+              ) : showMedia ? (
+                <>
+                  <Image className="w-16 h-16 text-g-border dark:text-g-border-dark" />
+                  <p className="text-sm font-medium text-g-text-secondary dark:text-g-text-secondary-dark">No photos or videos</p>
+                  <p className="text-xs text-g-text-disabled dark:text-g-text-disabled-dark">Image and video files from your Drive will appear here</p>
+                </>
               ) : debouncedQuery ? (
                 <>
                   <Search className="w-12 h-12 text-g-border dark:text-g-border-dark" />
@@ -746,6 +805,9 @@ export default function ExplorerRoot({
             if (focusedItem) handleToggleStar(focusedItem.id, !focusedItem.starred)
           }}
           onDownload={handleDownload}
+          onMakeCopy={showShared ? handleMakeCopy : undefined}
+          onShare={handleShare}
+          canShareSelection={canShareSelection}
           onClose={() => setContextMenu(null)}
         />
       )}
@@ -811,6 +873,7 @@ export default function ExplorerRoot({
           onCancel={() => setEmptyTrashConfirm(false)}
         />
       )}
+
     </>
   )
 }

@@ -1,24 +1,12 @@
-import { ChevronRight, Folder, File, FileText, Image, Video, Music, Star, Crown, Users } from 'lucide-react'
+import { ChevronRight, Star, Crown, Users, UserPlus } from 'lucide-react'
 import type { DriveItemDTO } from '../../types/explorer'
+import FileIcon from '../FileIcon'
 
 interface DetailsPanelProps {
   item: DriveItemDTO | null
   onClose: () => void
   onToggleStar?: (itemId: string, starred: boolean) => void
-}
-
-function FileTypeIcon({ mimeType, className }: { mimeType: string; className?: string }) {
-  if (mimeType === 'application/vnd.google-apps.folder' || mimeType === 'inode/directory')
-    return <Folder className={`text-blue-400 fill-blue-400/20 ${className}`} />
-  if (mimeType.startsWith('image/'))
-    return <Image className={`text-purple-400 ${className}`} />
-  if (mimeType.startsWith('video/'))
-    return <Video className={`text-red-400 ${className}`} />
-  if (mimeType.startsWith('audio/'))
-    return <Music className={`text-pink-400 ${className}`} />
-  if (mimeType.includes('pdf'))
-    return <FileText className={`text-orange-400 ${className}`} />
-  return <File className={`text-g-text-disabled dark:text-g-text-disabled-dark ${className}`} />
+  onShare?: (item: DriveItemDTO) => void
 }
 
 function formatBytes(bytes: number | null): string {
@@ -49,7 +37,7 @@ function mimeLabel(mimeType: string): string {
   return suffix.replace('vnd.google-apps.', '')
 }
 
-export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPanelProps) {
+export default function DetailsPanel({ item, onClose, onToggleStar, onShare }: DetailsPanelProps) {
   if (!item) return null
 
   return (
@@ -69,12 +57,12 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
       <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
         {/* Icon preview */}
         <div className="aspect-video bg-g-surface dark:bg-g-btn-secondary-dark rounded-xl flex items-center justify-center border border-g-border dark:border-g-border-dark">
-          <FileTypeIcon mimeType={item.mimeType} className="w-16 h-16 opacity-30" />
+          <FileIcon mimeType={item.mimeType} type={item.type} size={64} className="opacity-40" />
         </div>
 
         {/* Name + type icon + star */}
         <div className="flex items-start gap-3">
-          <FileTypeIcon mimeType={item.mimeType} className="w-5 h-5 mt-0.5 shrink-0" />
+          <FileIcon mimeType={item.mimeType} type={item.type} size={20} className="mt-0.5" />
           <h4 className="flex-1 font-semibold text-sm text-g-text dark:text-g-text-dark break-all leading-snug">
             {item.name}
           </h4>
@@ -135,6 +123,17 @@ export default function DetailsPanel({ item, onClose, onToggleStar }: DetailsPan
             )}
           </div>
         </div>
+
+        {/* Share button */}
+        {(item.canShare || item.shared) && onShare && (
+          <button
+            onClick={() => onShare(item)}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium bg-g-primary/10 dark:bg-g-primary-dark/10 text-g-primary dark:text-g-primary-dark border border-g-primary/20 dark:border-g-primary-dark/30 rounded-xl hover:bg-g-primary/18 dark:hover:bg-g-primary-dark/18 transition-all"
+          >
+            <UserPlus size={14} />
+            {item.canShare ? 'Share' : 'View sharing'}
+          </button>
+        )}
 
         {/* Capabilities */}
         <div className="flex flex-wrap gap-1.5">

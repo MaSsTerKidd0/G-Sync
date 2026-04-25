@@ -49,9 +49,10 @@ export function listFolderPage(args: {
   q?: string
   showTrashed?: boolean
   showShared?: boolean
+  showMedia?: boolean
 }): PageResult {
   const db = getDb()
-  const { parentId, sortBy, sortDir, limit, cursor, q, showTrashed, showShared } = args
+  const { parentId, sortBy, sortDir, limit, cursor, q, showTrashed, showShared, showMedia } = args
 
   // Map sortBy to DB column
   const sortCol =
@@ -79,6 +80,12 @@ export function listFolderPage(args: {
     conditions.push('di.trashed = 0')
     conditions.push('di.shared_with_me_time_ms IS NOT NULL')
     conditions.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
+  } else if (showMedia) {
+    // Photos view: all non-trashed image/video files, flat listing
+    conditions.push('di.trashed = 0')
+    conditions.push('di.is_folder = 0')
+    conditions.push("(di.mime_type LIKE 'image/%' OR di.mime_type LIKE 'video/%')")
+    conditions.push('di.owned_by_me = 1')
   } else {
     // My Drive: only owned files, exclude trashed, apply parent/root filter
     conditions.push('di.trashed = 0')
@@ -144,6 +151,11 @@ export function listFolderPage(args: {
     countConds.push('di.trashed = 0')
     countConds.push('di.shared_with_me_time_ms IS NOT NULL')
     countConds.push('(di.owned_by_me = 0 OR di.owned_by_me IS NULL)')
+  } else if (showMedia) {
+    countConds.push('di.trashed = 0')
+    countConds.push('di.is_folder = 0')
+    countConds.push("(di.mime_type LIKE 'image/%' OR di.mime_type LIKE 'video/%')")
+    countConds.push('di.owned_by_me = 1')
   } else {
     countConds.push('di.trashed = 0')
     countConds.push('di.owned_by_me = 1')
@@ -443,6 +455,24 @@ export function getSharedWithMeCount(): number {
          AND (owned_by_me = 0 OR owned_by_me IS NULL)
          AND is_removed = 0
          AND trashed = 0`
+    )
+    .get() as { cnt: number }
+  return row.cnt
+}
+
+/**
+ * Count media files (images + videos) in the user's Drive.
+ */
+export function getMediaCount(): number {
+  const db = getDb()
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) as cnt FROM drive_items
+       WHERE is_removed = 0
+         AND trashed = 0
+         AND is_folder = 0
+         AND (mime_type LIKE 'image/%' OR mime_type LIKE 'video/%')
+         AND owned_by_me = 1`
     )
     .get() as { cnt: number }
   return row.cnt

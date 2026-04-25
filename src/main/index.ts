@@ -6,7 +6,7 @@ import { config } from 'dotenv'
 import icon from '../../resources/icon.png?asset'
 import { startLogin, getAuthStatus, disconnect, refreshAccessToken } from './auth/googleOAuth'
 import { loadTokens, isTokenExpired, getTokenSecurityInfo } from './auth/tokenStore'
-import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension, emptyTrash, getAboutInfo, resolveStoragePlan } from './drive/driveApi'
+import { listFiles, downloadFileBuffer, isWorkspaceMime, getExportExtension, emptyTrash, getAboutInfo, resolveStoragePlan, copyFile, listPermissions, shareFile, unshareFile } from './drive/driveApi'
 import { initDatabase, closeDatabase } from './db/database'
 import { runMigrations } from './db/migrations'
 import { syncEngine } from './sync/syncEngine'
@@ -25,6 +25,7 @@ import {
   markAllTrashedAsRemoved,
   getSharedWithMeCount,
   getSharedWithMeItems,
+  getMediaCount,
   type SortBy,
   type SortDir
 } from './db/queryLayer'
@@ -93,6 +94,7 @@ import {
   listPendingFiles,
   listConflictFiles
 } from './db/syncedFoldersStore'
+import { listMediaItemsThrottled } from './photos/photosApi'
 import { folderWatcher } from './sync/folderWatcher'
 import { folderSyncWorker } from './sync/folderSyncWorker'
 
@@ -218,6 +220,86 @@ function registerIpcHandlers(): void {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[IPC] drive:getStoragePlan error:', message)
       throw new Error(message)
+    }
+  })
+
+  ipcMain.handle('drive:copyFile', async (_e, args: { fileId: string; name?: string }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    try {
+      const copied = await throttledDriveCall(() => copyFile({
+        fileId: args.fileId,
+        name: args.name
+      }))
+      sendToRenderer('explorer:dbChanged', { reason: 'dbChanged' })
+      return { success: true, fileId: copied.id, name: copied.name }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] drive:copyFile error:', message)
+      return { success: false, error: message }
+    }
+  })
+
+  // ── Sharing / Permissions handlers ──
+
+  ipcMain.handle('drive:listPermissions', async (_e, args: { fileId: string }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    try {
+      const permissions = await throttledDriveCall(() => listPermissions(args.fileId))
+      return { success: true, permissions }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] drive:listPermissions error:', message)
+      return { success: false, permissions: [], error: message }
+    }
+  })
+
+  ipcMain.handle('drive:shareFile', async (_e, args: { fileId: string; email: string; role: string }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    assertNonEmptyString(args?.email, 'email')
+    assertNonEmptyString(args?.role, 'role')
+    assertOneOf(args.role, ['reader', 'writer', 'commenter'] as const, 'role')
+    try {
+      const permission = await throttledDriveCall(() => shareFile({
+        fileId: args.fileId,
+        email: args.email,
+        role: args.role
+      }))
+      sendToRenderer('explorer:dbChanged', { reason: 'dbChanged' })
+      return { success: true, permission }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] drive:shareFile error:', message)
+      return { success: false, error: message }
+    }
+  })
+
+  ipcMain.handle('drive:unshareFile', async (_e, args: { fileId: string; permissionId: string }) => {
+    assertNonEmptyString(args?.fileId, 'fileId')
+    assertNonEmptyString(args?.permissionId, 'permissionId')
+    try {
+      await throttledDriveCall(() => unshareFile(args.fileId, args.permissionId))
+      sendToRenderer('explorer:dbChanged', { reason: 'dbChanged' })
+      return { success: true }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] drive:unshareFile error:', message)
+      return { success: false, error: message }
+    }
+  })
+
+  // ── Photos handlers ──
+
+  ipcMain.handle('photos:list', async (_e, args?: { pageToken?: string; pageSize?: number }) => {
+    try {
+      const result = await listMediaItemsThrottled({
+        pageToken: args?.pageToken,
+        pageSize: args?.pageSize
+      })
+      return { success: true, mediaItems: result.mediaItems, nextPageToken: result.nextPageToken }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[IPC] photos:list error:', message)
+      return { success: false, mediaItems: [], error: message }
     }
   })
 
@@ -407,6 +489,10 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('db:sharedWithMeCount', () => {
     return getSharedWithMeCount()
+  })
+
+  ipcMain.handle('db:mediaCount', () => {
+    return getMediaCount()
   })
 
   ipcMain.handle('db:sharedWithMeItems', (_e, limit?: number) => {

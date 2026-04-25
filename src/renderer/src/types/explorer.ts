@@ -50,6 +50,7 @@ export interface ExplorerQuery {
   q?: string
   showTrashed?: boolean
   showShared?: boolean
+  showMedia?: boolean
 }
 
 /**

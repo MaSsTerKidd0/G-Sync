@@ -1,3 +1,5 @@
+import FileIcon from './FileIcon'
+
 interface DriveFile {
   id: string
   name: string
@@ -32,16 +34,6 @@ function formatDate(iso: string): string {
   } catch {
     return iso
   }
-}
-
-function getMimeIcon(mimeType: string): string {
-  if (mimeType === 'application/vnd.google-apps.folder') return '\uD83D\uDCC1'
-  if (mimeType.startsWith('image/')) return '\uD83D\uDDBC\uFE0F'
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '\uD83D\uDCCA'
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '\uD83D\uDCFD\uFE0F'
-  if (mimeType.includes('document') || mimeType.includes('word')) return '\uD83D\uDCC4'
-  if (mimeType === 'application/pdf') return '\uD83D\uDCC4'
-  return '\uD83D\uDCC4'
 }
 
 export default function FileList({ files, loading, error }: FileListProps): React.JSX.Element {
@@ -102,7 +94,12 @@ export default function FileList({ files, loading, error }: FileListProps): Reac
           {files.map((file) => (
             <tr key={file.id} className="hover:bg-gray-800/30 transition-colors">
               <td className="px-4 py-3 font-medium text-gray-200">
-                <span className="mr-2">{getMimeIcon(file.mimeType)}</span>
+                <FileIcon
+                  mimeType={file.mimeType}
+                  type={file.mimeType === 'application/vnd.google-apps.folder' ? 'folder' : 'file'}
+                  size={18}
+                  className="mr-2 inline-block align-text-bottom"
+                />
                 {file.name}
               </td>
               <td className="px-4 py-3 text-gray-400">{formatDate(file.modifiedTime)}</td>

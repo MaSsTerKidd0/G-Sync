@@ -22,6 +22,9 @@ interface ContextMenuProps {
   onEmptyTrash?: () => void
   onToggleStar: () => void
   onDownload: () => void
+  onMakeCopy?: () => void
+  onShare?: () => void
+  canShareSelection?: boolean
   onClose: () => void
 }
 
@@ -55,6 +58,9 @@ export function ContextMenu({
   onEmptyTrash,
   onToggleStar,
   onDownload,
+  onMakeCopy,
+  onShare,
+  canShareSelection = false,
   onClose
 }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
@@ -128,6 +134,16 @@ export function ContextMenu({
         action: onDownload,
         disabled: selectedCount === 0
       },
+      {
+        label: 'Make a copy',
+        action: () => onMakeCopy?.(),
+        disabled: selectedCount !== 1 || !onMakeCopy
+      },
+      {
+        label: 'Share',
+        action: () => onShare?.(),
+        disabled: selectedCount !== 1 || !onShare
+      },
       { label: '', action: () => {}, separator: true },
       {
         label: selectedCount > 1 ? `Remove ${selectedCount} items` : 'Remove',
@@ -161,6 +177,11 @@ export function ContextMenu({
         shortcut: 'F2',
         action: onRename,
         disabled: selectedCount !== 1 || !canEditSelection
+      },
+      {
+        label: 'Share',
+        action: () => onShare?.(),
+        disabled: selectedCount !== 1 || !canShareSelection || !onShare
       },
       { label: '', action: () => {}, separator: true },
       {

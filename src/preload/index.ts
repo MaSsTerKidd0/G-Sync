@@ -164,7 +164,51 @@ const gsyncApi = {
       userName: string
       userEmail: string
       userPhoto?: string
-    }> => ipcRenderer.invoke('drive:getStoragePlan')
+    }> => ipcRenderer.invoke('drive:getStoragePlan'),
+
+    copyFile: (args: {
+      fileId: string
+      name?: string
+    }): Promise<{ success: boolean; fileId?: string; name?: string; error?: string }> =>
+      ipcRenderer.invoke('drive:copyFile', args),
+
+    listPermissions: (args: {
+      fileId: string
+    }): Promise<{
+      success: boolean
+      permissions: Array<{
+        id: string
+        type: string
+        role: string
+        emailAddress?: string
+        displayName?: string
+        photoLink?: string
+        deleted?: boolean
+      }>
+      error?: string
+    }> => ipcRenderer.invoke('drive:listPermissions', args),
+
+    shareFile: (args: {
+      fileId: string
+      email: string
+      role: string
+    }): Promise<{
+      success: boolean
+      permission?: {
+        id: string
+        type: string
+        role: string
+        emailAddress?: string
+        displayName?: string
+      }
+      error?: string
+    }> => ipcRenderer.invoke('drive:shareFile', args),
+
+    unshareFile: (args: {
+      fileId: string
+      permissionId: string
+    }): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('drive:unshareFile', args)
   },
   sync: {
     start: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke('sync:start'),
@@ -237,7 +281,9 @@ const gsyncApi = {
     sharedWithMeCount: (): Promise<number> =>
       ipcRenderer.invoke('db:sharedWithMeCount'),
     sharedWithMeItems: (limit?: number): Promise<DriveItemRow[]> =>
-      ipcRenderer.invoke('db:sharedWithMeItems', limit)
+      ipcRenderer.invoke('db:sharedWithMeItems', limit),
+    mediaCount: (): Promise<number> =>
+      ipcRenderer.invoke('db:mediaCount')
   },
 
   // ── Phase 3: Explorer API ──
@@ -252,6 +298,7 @@ const gsyncApi = {
       q?: string
       showTrashed?: boolean
       showShared?: boolean
+      showMedia?: boolean
     }): Promise<PageResult> => ipcRenderer.invoke('explorer:listFolderPage', args),
 
     getThumbnail: (args: {
@@ -384,6 +431,33 @@ const gsyncApi = {
       ipcRenderer.on('download:progress', handler)
       return () => ipcRenderer.removeListener('download:progress', handler)
     }
+  },
+
+  // ── Photos API ──
+
+  photos: {
+    list: (args?: {
+      pageToken?: string
+      pageSize?: number
+    }): Promise<{
+      success: boolean
+      mediaItems: Array<{
+        id: string
+        productUrl: string
+        baseUrl: string
+        mimeType: string
+        filename: string
+        mediaMetadata: {
+          creationTime?: string
+          width?: string
+          height?: string
+          photo?: { cameraMake?: string; cameraModel?: string }
+          video?: { cameraMake?: string; cameraModel?: string; fps?: number; status?: string }
+        }
+      }>
+      nextPageToken?: string
+      error?: string
+    }> => ipcRenderer.invoke('photos:list', args)
   },
 
   // ── Phase 5: Cleanup / Smart Tools API ──

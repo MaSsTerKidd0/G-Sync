@@ -13,10 +13,11 @@ import {
   Plus,
   X,
   Trash2,
-  Users
+  Users,
+  Image
 } from 'lucide-react'
 
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared' | 'media'
 
 interface SidebarProps {
   activeView: ActiveView
@@ -35,6 +36,7 @@ interface SidebarProps {
 const NAV_ITEMS: Array<{ id: ActiveView; label: string; icon: typeof HardDrive }> = [
   { id: 'explorer', label: 'My Drive', icon: HardDrive },
   { id: 'shared', label: 'Shared with me', icon: Users },
+  { id: 'media', label: 'Photos', icon: Image },
   { id: 'trash', label: 'Trash', icon: Trash2 },
   { id: 'smart-tools', label: 'Smart Tools', icon: Sparkles }
 ]

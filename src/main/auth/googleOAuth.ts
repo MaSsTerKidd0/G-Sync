@@ -7,6 +7,8 @@ import { TokenData, saveTokens, loadTokens, clearTokens, isTokenExpired } from '
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
+const PHOTOS_SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
+const ALL_SCOPES = `${DRIVE_SCOPE} ${PHOTOS_SCOPE}`
 
 function getClientId(): string {
   const id = process.env.GSYNC_GOOGLE_CLIENT_ID
@@ -110,7 +112,7 @@ export async function startLogin(): Promise<TokenData> {
         client_id: clientId,
         redirect_uri: boundRedirectUri,
         response_type: 'code',
-        scope: DRIVE_SCOPE,
+        scope: ALL_SCOPES,
         code_challenge: codeChallenge,
         code_challenge_method: 'S256',
         state: state,

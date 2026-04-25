@@ -11,6 +11,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { Star, Users } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
+import FileIcon from '../FileIcon'
 import { InlineRename } from './InlineRename'
 
 const ROW_H = 44
@@ -53,17 +54,6 @@ function formatDate(ms: number | null): string {
   } catch {
     return '\u2014'
   }
-}
-
-function getMimeIcon(mimeType: string, type: string): string {
-  if (type === 'folder') return '\uD83D\uDCC1'
-  if (type === 'shortcut') return '\u21AA\uFE0F'
-  if (mimeType.startsWith('image/')) return '\uD83D\uDDBC\uFE0F'
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '\uD83D\uDCCA'
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '\uD83D\uDCFD\uFE0F'
-  if (mimeType.includes('document') || mimeType.includes('word')) return '\uD83D\uDCC4'
-  if (mimeType === 'application/pdf') return '\uD83D\uDCC4'
-  return '\uD83D\uDCC4'
 }
 
 // Memoized row component with drag/drop support
@@ -159,7 +149,7 @@ const ListRow = React.memo(function ListRow({
             loading="lazy"
           />
         ) : (
-          <span className="text-base">{getMimeIcon(item.mimeType, item.type)}</span>
+          <FileIcon mimeType={item.mimeType} type={item.type} size={24} />
         )}
       </div>
 

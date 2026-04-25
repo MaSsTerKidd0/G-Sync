@@ -11,6 +11,7 @@ import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { Star, Users } from 'lucide-react'
 import type { DriveItemDTO, SelectionState } from '../../types/explorer'
 import { useThumbnail } from '../../hooks/useThumbnail'
+import FileIcon from '../FileIcon'
 import { InlineRename } from './InlineRename'
 
 const CARD_W = 200
@@ -34,17 +35,6 @@ interface GridViewProps {
   onRenameCancel?: () => void
   onContextMenu?: (itemId: string, x: number, y: number) => void
   onToggleStar?: (itemId: string, starred: boolean) => void
-}
-
-function getMimeIcon(mimeType: string, type: string): string {
-  if (type === 'folder') return '\uD83D\uDCC1'
-  if (type === 'shortcut') return '\u21AA\uFE0F'
-  if (mimeType.startsWith('image/')) return '\uD83D\uDDBC\uFE0F'
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '\uD83D\uDCCA'
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '\uD83D\uDCFD\uFE0F'
-  if (mimeType.includes('document') || mimeType.includes('word')) return '\uD83D\uDCC4'
-  if (mimeType === 'application/pdf') return '\uD83D\uDCC4'
-  return '\uD83D\uDCC4'
 }
 
 function formatBytes(bytes: number | null): string {
@@ -150,7 +140,7 @@ const GridCard = React.memo(function GridCard({
             loading="lazy"
           />
         ) : (
-          <span className="text-4xl opacity-60">{getMimeIcon(item.mimeType, item.type)}</span>
+          <FileIcon mimeType={item.mimeType} type={item.type} size={48} className="opacity-80" />
         )}
         {/* Star button (top-left overlay) */}
         <button

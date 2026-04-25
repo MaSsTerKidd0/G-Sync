@@ -8,6 +8,7 @@ interface DriveItemRowBridge {
   mime_type: string
   is_folder: number
   parent_count: number
+  starred: number
   trashed: number
   size_bytes: number | null
   modified_time_ms: number | null
@@ -15,6 +16,14 @@ interface DriveItemRowBridge {
   has_thumbnail: number
   thumbnail_version: string | null
   is_removed: number
+  owned_by_me: number | null
+  shared: number
+  owner_name: string | null
+  owner_email: string | null
+  can_delete: number | null
+  can_trash: number | null
+  can_edit: number | null
+  can_share: number | null
 }
 
 interface PageResultBridge {
@@ -117,6 +126,36 @@ interface GsyncApi {
         parents?: string[]
       }>
     }>
+    getStoragePlan(): Promise<{
+      planName: string
+      limitBytes: number | null
+      usageBytes: number
+      usageInDriveBytes: number
+      usageInDriveTrashBytes: number
+      userName: string
+      userEmail: string
+      userPhoto?: string
+    }>
+    copyFile(args: { fileId: string; name?: string }): Promise<{
+      success: boolean; fileId?: string; name?: string; error?: string
+    }>
+    listPermissions(args: { fileId: string }): Promise<{
+      success: boolean
+      permissions: Array<{
+        id: string; type: string; role: string
+        emailAddress?: string; displayName?: string
+        photoLink?: string; deleted?: boolean
+      }>
+      error?: string
+    }>
+    shareFile(args: { fileId: string; email: string; role: string }): Promise<{
+      success: boolean
+      permission?: { id: string; type: string; role: string; emailAddress?: string; displayName?: string }
+      error?: string
+    }>
+    unshareFile(args: { fileId: string; permissionId: string }): Promise<{
+      success: boolean; error?: string
+    }>
   }
   sync: {
     start(): Promise<{ success: boolean; error?: string }>
@@ -131,6 +170,7 @@ interface GsyncApi {
     onPhaseChanged(cb: (phase: string) => void): () => void
     onProgress(cb: (data: { itemsProcessed: number; pagesProcessed: number }) => void): () => void
     onError(cb: (err: { code: string; message: string }) => void): () => void
+    triggerSync(): Promise<{ success: boolean; error?: string }>
   }
   db: {
     rootItems(limit?: number, offset?: number): Promise<{
@@ -149,6 +189,9 @@ interface GsyncApi {
     starredItems(limit?: number): Promise<DriveItemRowBridge[]>
     updateStarred(fileId: string, starred: boolean): Promise<void>
     trashedCount(): Promise<number>
+    sharedWithMeCount(): Promise<number>
+    sharedWithMeItems(limit?: number): Promise<DriveItemRowBridge[]>
+    mediaCount(): Promise<number>
   }
   explorer: {
     listFolderPage(args: {
@@ -159,6 +202,8 @@ interface GsyncApi {
       cursor?: { sortValue: string | number; id: string }
       q?: string
       showTrashed?: boolean
+      showShared?: boolean
+      showMedia?: boolean
     }): Promise<PageResultBridge>
     getThumbnail(args: {
       fileId: string
@@ -200,6 +245,15 @@ interface GsyncApi {
     onOpsChanged(cb: (payload: { type: string; opIds: string[] }) => void): () => void
     onOpsProgress(cb: (payload: { opId: string; opType: string; fileId: string; status: string }) => void): () => void
     onOpsError(cb: (payload: { opId: string; opType: string; fileId: string; code: string; message: string }) => void): () => void
+    downloadFile(args: { fileId: string; fileName: string; mimeType: string }): Promise<{
+      success: boolean; path?: string; error?: string
+    }>
+    downloadZip(args: {
+      items: Array<{ fileId: string; fileName: string; mimeType: string }>
+    }): Promise<{ success: boolean; path?: string; error?: string }>
+    onDownloadProgress(cb: (payload: {
+      phase: string; fileName: string; current?: number; total?: number; error?: string
+    }) => void): () => void
   }
   cleanup: {
     listDuplicateGroups(args?: {
@@ -249,6 +303,36 @@ interface GsyncApi {
       platform: string
     }>
     openDataFolder(): Promise<void>
+    get(key: string): Promise<string | null>
+    set(key: string, value: string): Promise<void>
+    getAll(): Promise<Record<string, string>>
+  }
+  photos: {
+    list(args?: { pageToken?: string; pageSize?: number }): Promise<{
+      success: boolean
+      mediaItems: Array<{
+        id: string; productUrl: string; baseUrl: string; mimeType: string; filename: string
+        mediaMetadata: {
+          creationTime?: string; width?: string; height?: string
+          photo?: { cameraMake?: string; cameraModel?: string }
+          video?: { cameraMake?: string; cameraModel?: string; fps?: number; status?: string }
+        }
+      }>
+      nextPageToken?: string
+      error?: string
+    }>
+  }
+  folders: {
+    list(): Promise<Array<{
+      id: string; local_path: string; drive_folder_id: string | null
+      drive_folder_name: string | null; status: string
+      last_sync_ms: number | null; last_error: string | null; created_at_ms: number
+    }>>
+    add(): Promise<{ success: boolean; folder?: { id: string; local_path: string; status: string }; error?: string }>
+    remove(folderId: string): Promise<void>
+    sync(folderId: string): Promise<{ success: boolean; error?: string }>
+    onStatusChanged(cb: (payload: { folderId: string; status: string }) => void): () => void
+    onSyncProgress(cb: (payload: { folderId: string; current: number; total: number; fileName: string }) => void): () => void
   }
 }
 

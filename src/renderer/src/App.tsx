@@ -5,13 +5,15 @@ import TopBar from './components/layout/TopBar'
 import StatusBar from './components/layout/StatusBar'
 import DetailsPanel from './components/layout/DetailsPanel'
 import ExplorerRoot from './components/explorer/ExplorerRoot'
+import PhotosGrid from './components/PhotosGrid'
 import CleanupDashboard from './components/cleanup/CleanupDashboard'
 import SettingsPanel from './components/SettingsPanel'
 import PatchNotesModal from './components/PatchNotesModal'
+import { ShareDialog } from './components/explorer/ShareDialog'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
 type AuthStatus = 'disconnected' | 'connecting' | 'connected'
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared' | 'media'
 
 function App(): React.JSX.Element {
   // ── Auth state ──
@@ -45,6 +47,9 @@ function App(): React.JSX.Element {
 
   // ── Details panel ──
   const [selectedItem, setSelectedItem] = useState<DriveItemDTO | null>(null)
+
+  // ── Share dialog ──
+  const [shareItem, setShareItem] = useState<DriveItemDTO | null>(null)
 
   // ── Patch notes modal ──
   const [showPatchNotes, setShowPatchNotes] = useState(false)
@@ -328,6 +333,7 @@ function App(): React.JSX.Element {
                   sortBy={sortBy}
                   sortDir={sortDir}
                   onSelectedItemChange={setSelectedItem}
+                  onShareItem={setShareItem}
                 />
               </div>
             ) : activeView === 'trash' ? (
@@ -353,8 +359,13 @@ function App(): React.JSX.Element {
                   sortBy={sortBy}
                   sortDir={sortDir}
                   onSelectedItemChange={setSelectedItem}
+                  onShareItem={setShareItem}
                   showShared
                 />
+              </div>
+            ) : activeView === 'media' ? (
+              <div className="h-full animate-fade-in overflow-hidden">
+                <PhotosGrid />
               </div>
             ) : activeView === 'smart-tools' ? (
               <div className="h-full animate-fade-in overflow-hidden">
@@ -373,6 +384,7 @@ function App(): React.JSX.Element {
               item={selectedItem}
               onClose={() => setSelectedItem(null)}
               onToggleStar={(itemId, starred) => window.gsync.db.updateStarred(itemId, starred)}
+              onShare={setShareItem}
             />
           )}
         </div>
@@ -389,6 +401,11 @@ function App(): React.JSX.Element {
       {/* Patch notes modal */}
       {showPatchNotes && (
         <PatchNotesModal version={appVersion} onDismiss={handleDismissPatchNotes} />
+      )}
+
+      {/* Share dialog */}
+      {shareItem && (
+        <ShareDialog item={shareItem} onClose={() => setShareItem(null)} />
       )}
     </div>
   )

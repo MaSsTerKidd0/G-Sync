@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import FileIcon from './FileIcon'
 
 interface DriveItemRow {
   id: string
@@ -37,16 +38,6 @@ function formatDate(ms: number | null): string {
   } catch {
     return '—'
   }
-}
-
-function getMimeIcon(mimeType: string, isFolder: boolean): string {
-  if (isFolder) return '\uD83D\uDCC1'
-  if (mimeType.startsWith('image/')) return '\uD83D\uDDBC\uFE0F'
-  if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '\uD83D\uDCCA'
-  if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return '\uD83D\uDCFD\uFE0F'
-  if (mimeType.includes('document') || mimeType.includes('word')) return '\uD83D\uDCC4'
-  if (mimeType === 'application/pdf') return '\uD83D\uDCC4'
-  return '\uD83D\uDCC4'
 }
 
 export default function FileBrowser({ connected }: FileBrowserProps): React.JSX.Element {
@@ -231,9 +222,12 @@ export default function FileBrowser({ connected }: FileBrowserProps): React.JSX.
                     className={`hover:bg-gray-800/30 transition-colors ${item.is_folder ? 'cursor-pointer' : ''}`}
                   >
                     <td className="px-4 py-3 font-medium text-gray-200">
-                      <span className="mr-2">
-                        {getMimeIcon(item.mime_type, !!item.is_folder)}
-                      </span>
+                      <FileIcon
+                        mimeType={item.mime_type}
+                        type={item.is_folder ? 'folder' : 'file'}
+                        size={18}
+                        className="mr-2 inline-block align-text-bottom"
+                      />
                       {item.name}
                     </td>
                     <td className="px-4 py-3 text-gray-400">
