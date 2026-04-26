@@ -8,6 +8,7 @@ import ExplorerRoot from './components/explorer/ExplorerRoot'
 import PhotosGrid from './components/PhotosGrid'
 import CleanupDashboard from './components/cleanup/CleanupDashboard'
 import SettingsPanel from './components/SettingsPanel'
+import PatchNotesModal from './components/PatchNotesModal'
 import { ShareDialog } from './components/explorer/ShareDialog'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
@@ -50,6 +51,13 @@ function App(): React.JSX.Element {
   // ── Share dialog ──
   const [shareItem, setShareItem] = useState<DriveItemDTO | null>(null)
 
+  // ── Patch notes modal ──
+  // Shown once per version on first launch after upgrade. Dismissing with
+  // "Don't show until next update" stamps last_seen_version in the settings
+  // store so the modal stays hidden until the next release.
+  const [showPatchNotes, setShowPatchNotes] = useState(false)
+  const [appVersion, setAppVersion] = useState('1.1.0')
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300)
@@ -77,6 +85,39 @@ function App(): React.JSX.Element {
   useEffect(() => {
     checkStatus()
   }, [checkStatus])
+
+  // ── Patch notes version check ──
+  // Compare the app's current version to the last_seen_version setting.
+  // If the user hasn't dismissed the modal for this version yet, show it.
+  useEffect(() => {
+    async function checkVersion() {
+      try {
+        const [info, lastSeen] = await Promise.all([
+          window.gsync.settings.getAppInfo(),
+          window.gsync.settings.get('last_seen_version')
+        ])
+        setAppVersion(info.version)
+        if (lastSeen !== info.version) {
+          setShowPatchNotes(true)
+        }
+      } catch {
+        // Settings DB may not be ready yet — skip silently; the next
+        // status check will retry indirectly.
+      }
+    }
+    checkVersion()
+  }, [])
+
+  const handleDismissPatchNotes = useCallback(async (dontShowAgain: boolean) => {
+    setShowPatchNotes(false)
+    if (dontShowAgain) {
+      try {
+        await window.gsync.settings.set('last_seen_version', appVersion)
+      } catch {
+        // Non-critical: at worst the modal shows again next launch.
+      }
+    }
+  }, [appVersion])
 
   // Fetch user profile when connected (for account avatar/menu)
   useEffect(() => {
@@ -367,6 +408,11 @@ function App(): React.JSX.Element {
       {/* Share dialog */}
       {shareItem && (
         <ShareDialog item={shareItem} onClose={() => setShareItem(null)} />
+      )}
+
+      {/* Patch notes modal — shown once per version after a fresh upgrade */}
+      {showPatchNotes && (
+        <PatchNotesModal version={appVersion} onDismiss={handleDismissPatchNotes} />
       )}
     </div>
   )
