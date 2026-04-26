@@ -245,6 +245,11 @@ export class FolderSyncWorker extends EventEmitter {
 
 /**
  * Simple MIME type guesser based on file extension.
+ *
+ * Bug #12 fix: expanded coverage for iPhone camera-roll formats (HEIC/MOV),
+ * common audio (FLAC/AAC/M4A/OGG), modern image formats (AVIF/BMP/TIFF), and
+ * config/data formats (YAML/TOML). Files uploaded with the wrong MIME default
+ * to application/octet-stream which Drive cannot preview.
  */
 function guessMimeType(filePath: string): string {
   const ext = filePath.toLowerCase().split('.').pop() ?? ''
@@ -261,6 +266,9 @@ function guessMimeType(filePath: string): string {
     csv: 'text/csv',
     md: 'text/markdown',
     pdf: 'application/pdf',
+    yaml: 'text/yaml',
+    yml: 'text/yaml',
+    toml: 'application/toml',
     // Office
     doc: 'application/msword',
     docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -276,11 +284,27 @@ function guessMimeType(filePath: string): string {
     svg: 'image/svg+xml',
     webp: 'image/webp',
     ico: 'image/x-icon',
-    // Audio/Video
+    avif: 'image/avif',
+    bmp: 'image/bmp',
+    tiff: 'image/tiff',
+    tif: 'image/tiff',
+    heic: 'image/heic',
+    heif: 'image/heif',
+    // Audio
     mp3: 'audio/mpeg',
     wav: 'audio/wav',
+    flac: 'audio/flac',
+    aac: 'audio/aac',
+    ogg: 'audio/ogg',
+    m4a: 'audio/mp4',
+    wma: 'audio/x-ms-wma',
+    // Video
     mp4: 'video/mp4',
     webm: 'video/webm',
+    mov: 'video/quicktime',
+    mkv: 'video/x-matroska',
+    m4v: 'video/mp4',
+    avi: 'video/x-msvideo',
     // Archives
     zip: 'application/zip',
     gz: 'application/gzip',
