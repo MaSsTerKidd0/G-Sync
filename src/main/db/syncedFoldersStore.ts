@@ -112,6 +112,12 @@ export function upsertSyncedFile(
 ): void {
   const db = getDb()
   const id = randomUUID()
+  // Bug #2 fix: previous CASE always evaluated to 'pending', so unchanged
+  // files were spuriously re-queued for upload. New rules:
+  //   - already-synced row whose hash didn't change → keep 'synced' (skip re-upload)
+  //   - row in unresolved 'conflict' → preserve conflict (Bug #6 fix — don't let
+  //     a touch-event silently clobber a conflict the user hasn't resolved yet)
+  //   - everything else → 'pending'
   db.prepare(`
     INSERT INTO synced_files (id, folder_id, relative_path, local_hash, local_modified_ms, local_size_bytes, sync_status)
     VALUES (?, ?, ?, ?, ?, ?, 'pending')
@@ -120,11 +126,18 @@ export function upsertSyncedFile(
       local_modified_ms = excluded.local_modified_ms,
       local_size_bytes = excluded.local_size_bytes,
       sync_status = CASE
-        WHEN synced_files.drive_file_id IS NOT NULL AND synced_files.local_hash != excluded.local_hash
-        THEN 'pending'
+        WHEN excluded.local_hash IS NOT NULL
+             AND synced_files.local_hash = excluded.local_hash
+             AND synced_files.sync_status = 'synced'
+        THEN 'synced'
+        WHEN synced_files.sync_status = 'conflict'
+        THEN 'conflict'
         ELSE 'pending'
       END,
-      last_error = NULL
+      last_error = CASE
+        WHEN synced_files.sync_status = 'conflict' THEN synced_files.last_error
+        ELSE NULL
+      END
   `).run(id, folderId, relativePath, localHash, localModifiedMs, localSizeBytes)
 }
 

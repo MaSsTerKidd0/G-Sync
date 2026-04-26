@@ -3,12 +3,21 @@
  *
  * Uses the same OAuth tokens as Drive (photoslibrary.readonly scope).
  * Rate-limited via the shared throttledDriveCall() bottleneck.
+ *
+ * NOTE: As of Google's March 2025 policy change, mediaItems.list only returns
+ * items uploaded by the calling app. This client is being deprecated; the
+ * Photos tab is scheduled for removal in v1.1.0.
  */
 
 import { getValidAccessToken } from '../auth/googleOAuth'
 import { throttledDriveCall } from '../drive/rateLimiter'
 
 const PHOTOS_BASE = 'https://photoslibrary.googleapis.com/v1'
+
+// Toggle verbose Photos-API debug logs via `GSYNC_DEBUG=1` in the environment.
+// Bug #10 fix: previously logged partial bearer tokens unconditionally — never
+// log token material in production.
+const DEBUG = process.env.GSYNC_DEBUG === '1'
 
 // ── Types ──
 
@@ -47,15 +56,6 @@ export interface ListMediaItemsResult {
 async function getPhotosAuthHeaders(): Promise<Record<string, string>> {
   const token = await getValidAccessToken()
   if (!token) throw new Error('Not authenticated — no valid access token')
-  console.log("🔐 Verifying token scopes...")
-
-  console.log("token head/tail:", token.slice(0, 12), token.slice(-12))
-  const tokenInfoRes = await fetch(
-  `https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`
-  )
-
-  const tokenInfo = await tokenInfoRes.json()
-  console.log("📜 Token scopes:", tokenInfo.scope)
 
   return {
     Authorization: `Bearer ${token}`,
@@ -79,24 +79,24 @@ export async function listMediaItems(opts?: {
   const url = `${PHOTOS_BASE}/mediaItems?${params.toString()}`
 
   const res = await fetch(url, { method: 'GET', headers })
-const bodyText = await res.text()
+  const bodyText = await res.text()
 
-console.log("Status:", res.status)
-console.log("WWW-Authenticate:", res.headers.get("www-authenticate"))
-console.log("Body:", bodyText)
+  if (DEBUG) {
+    console.log('[photos] status=%d www-auth=%s', res.status, res.headers.get('www-authenticate'))
+  }
 
-if (!res.ok) {
-  throw Object.assign(
-    new Error(`Photos API error (${res.status}): ${bodyText}`),
-    { status: res.status }
-  )
-}
+  if (!res.ok) {
+    throw Object.assign(
+      new Error(`Photos API error (${res.status}): ${bodyText}`),
+      { status: res.status }
+    )
+  }
 
-const data = JSON.parse(bodyText)
-return {
-  mediaItems: data.mediaItems ?? [],
-  nextPageToken: data.nextPageToken
-}
+  const data = JSON.parse(bodyText)
+  return {
+    mediaItems: data.mediaItems ?? [],
+    nextPageToken: data.nextPageToken
+  }
 }
 
 /**
