@@ -89,8 +89,12 @@ import {
   addSyncedFolder,
   removeSyncedFolder,
   listSyncedFolders,
-  getSyncedFolder
+  getSyncedFolder,
+  listConflictFiles,
+  getFolderConflictCounts,
+  type ConflictAction
 } from './db/syncedFoldersStore'
+import { applyConflictResolution } from './sync/conflictResolver'
 import { listMediaItemsThrottled } from './photos/photosApi'
 import { folderWatcher } from './sync/folderWatcher'
 import { folderSyncWorker } from './sync/folderSyncWorker'
@@ -859,6 +863,42 @@ function registerIpcHandlers(): void {
     })
     return { success: true }
   })
+
+  // ── Conflict resolution (v1.1.0) ──
+
+  /** Returns the list of files currently in 'conflict' status for a folder. */
+  ipcMain.handle('folders:listConflicts', (_e, folderId: string) => {
+    assertNonEmptyString(folderId, 'folderId')
+    return listConflictFiles(folderId)
+  })
+
+  /** Returns a map of folderId → conflict count, used by the sidebar badge. */
+  ipcMain.handle('folders:conflictCounts', () => {
+    return getFolderConflictCounts()
+  })
+
+  /**
+   * Apply one of three resolution actions to a single conflicted file.
+   * On success, broadcasts a 'folder:statusChanged' event so the sidebar
+   * badge and any open dialog can refetch.
+   */
+  ipcMain.handle(
+    'folders:resolveConflict',
+    async (_e, args: { folderId: string; relativePath: string; action: ConflictAction }) => {
+      assertNonEmptyString(args?.folderId, 'folderId')
+      assertNonEmptyString(args?.relativePath, 'relativePath')
+      assertOneOf(args?.action, ['keep-local', 'keep-remote', 'keep-both'], 'action')
+
+      const result = await applyConflictResolution(args)
+      if (result.success) {
+        sendToRenderer('folder:statusChanged', {
+          folderId: args.folderId,
+          status: 'conflict-resolved'
+        })
+      }
+      return result
+    }
+  )
 }
 
 // Forward sync events to the renderer via the safe sender

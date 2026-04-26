@@ -176,15 +176,76 @@ export function markSyncedFileError(
   `).run(error, folderId, relativePath)
 }
 
+/**
+ * Mark a file as in-conflict, optionally recording the latest remote
+ * metadata. The UI uses these fields to show "local was edited at X,
+ * remote was edited at Y" so the user can pick a resolution.
+ */
 export function markSyncedFileConflict(
   folderId: string,
-  relativePath: string
+  relativePath: string,
+  remote?: { driveModifiedMs?: number | null; driveHash?: string | null }
 ): void {
   const db = getDb()
+  if (remote && (remote.driveModifiedMs !== undefined || remote.driveHash !== undefined)) {
+    db.prepare(`
+      UPDATE synced_files
+      SET sync_status = 'conflict',
+          drive_modified_ms = COALESCE(?, drive_modified_ms),
+          drive_hash = COALESCE(?, drive_hash),
+          last_error = 'Local and remote both changed since last sync'
+      WHERE folder_id = ? AND relative_path = ?
+    `).run(remote.driveModifiedMs ?? null, remote.driveHash ?? null, folderId, relativePath)
+  } else {
+    db.prepare(`
+      UPDATE synced_files SET sync_status = 'conflict',
+          last_error = 'Local and remote both changed since last sync'
+      WHERE folder_id = ? AND relative_path = ?
+    `).run(folderId, relativePath)
+  }
+}
+
+/**
+ * Apply the user's chosen resolution to a conflict row.
+ *
+ *   keep-local   → status='pending'. The next sync will overwrite remote
+ *                  with the local content. Drive keeps prior revision in
+ *                  its own version history as a backstop.
+ *   keep-remote  → status='synced'. The caller is responsible for actually
+ *                  downloading the remote bytes onto disk before calling
+ *                  this; this function only flips DB state.
+ *   keep-both    → status='synced' for the original path (remote wins) and
+ *                  the caller writes a sibling file at the conflict path
+ *                  that the watcher will pick up as a new pending upload.
+ */
+export type ConflictAction = 'keep-local' | 'keep-remote' | 'keep-both'
+
+export function resolveConflict(
+  folderId: string,
+  relativePath: string,
+  action: ConflictAction
+): void {
+  const db = getDb()
+  const newStatus = action === 'keep-local' ? 'pending' : 'synced'
   db.prepare(`
-    UPDATE synced_files SET sync_status = 'conflict'
-    WHERE folder_id = ? AND relative_path = ?
-  `).run(folderId, relativePath)
+    UPDATE synced_files
+    SET sync_status = ?, last_error = NULL
+    WHERE folder_id = ? AND relative_path = ? AND sync_status = 'conflict'
+  `).run(newStatus, folderId, relativePath)
+}
+
+/**
+ * Returns a map of folderId → conflict count. Used by the sidebar to show
+ * an "N conflicts" badge per synced folder without N+1 queries.
+ */
+export function getFolderConflictCounts(): Record<string, number> {
+  const db = getDb()
+  const rows = db.prepare(
+    "SELECT folder_id, COUNT(*) as count FROM synced_files WHERE sync_status = 'conflict' GROUP BY folder_id"
+  ).all() as Array<{ folder_id: string; count: number }>
+  const out: Record<string, number> = {}
+  for (const row of rows) out[row.folder_id] = row.count
+  return out
 }
 
 export function markSyncedFileDeleted(

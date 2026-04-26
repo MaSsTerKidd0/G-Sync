@@ -14,8 +14,10 @@ import {
   X,
   Trash2,
   Users,
-  Image
+  Image,
+  AlertTriangle
 } from 'lucide-react'
+import ConflictResolutionDialog from '../ConflictResolutionDialog'
 
 type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared' | 'media'
 
@@ -131,6 +133,23 @@ export default function Sidebar({
   const [syncedFolders, setSyncedFolders] = useState<SyncedFolderItem[]>([])
   const [folderProgress, setFolderProgress] = useState<Record<string, { current: number; total: number; fileName: string }>>({})
 
+  // Per-folder conflict count for the warning badge.
+  const [conflictCounts, setConflictCounts] = useState<Record<string, number>>({})
+  // Currently-open conflict resolution dialog (folderId or null).
+  const [conflictDialogFolder, setConflictDialogFolder] = useState<SyncedFolderItem | null>(null)
+
+  const refreshConflictCounts = useCallback(() => {
+    if (!isConnected) return
+    window.gsync.folders
+      .conflictCounts()
+      .then(setConflictCounts)
+      .catch(console.error)
+  }, [isConnected])
+
+  useEffect(() => {
+    refreshConflictCounts()
+  }, [refreshConflictCounts])
+
   // Fetch synced folders
   useEffect(() => {
     if (!isConnected) return
@@ -152,6 +171,9 @@ export default function Sidebar({
           prev.map((f) => (f.id === payload.folderId ? { ...f, status: payload.status } : f))
         )
       }
+      // Conflict counts may have changed — a sync run can create new conflicts
+      // and a 'conflict-resolved' event clears one. Refetch in either case.
+      refreshConflictCounts()
     })
 
     const unsubProgress = window.gsync.folders.onSyncProgress((payload) => {
@@ -334,6 +356,7 @@ export default function Sidebar({
                 syncedFolders.map((folder) => {
                   const folderName = folder.local_path.replace(/\\/g, '/').split('/').filter(Boolean).pop() ?? 'Folder'
                   const progress = folderProgress[folder.id]
+                  const conflictCount = conflictCounts[folder.id] ?? 0
                   const statusDot =
                     folder.status === 'synced' ? 'bg-g-success' :
                     folder.status === 'syncing' ? 'bg-g-accent animate-pulse' :
@@ -348,6 +371,17 @@ export default function Sidebar({
                         <span className="flex-1 text-xs text-g-text-secondary dark:text-g-text-secondary-dark truncate" title={folder.local_path}>
                           {folderName}
                         </span>
+                        {/* Conflict badge — only shown when count > 0. Click opens the resolution dialog. */}
+                        {conflictCount > 0 && (
+                          <button
+                            onClick={() => setConflictDialogFolder(folder)}
+                            className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-g-accent/15 dark:bg-g-accent-dark/20 text-g-accent dark:text-g-accent-dark hover:bg-g-accent/25 dark:hover:bg-g-accent-dark/30 transition-colors"
+                            title={`${conflictCount} file${conflictCount === 1 ? '' : 's'} need conflict resolution`}
+                          >
+                            <AlertTriangle size={10} />
+                            <span className="text-[10px] font-bold leading-none">{conflictCount}</span>
+                          </button>
+                        )}
                         {folder.status === 'error' && (
                           <button
                             onClick={() => handleRetryFolder(folder.id)}
@@ -472,6 +506,23 @@ export default function Sidebar({
             </button>
           )}
         </div>
+      )}
+
+      {/* Conflict resolution dialog — opened from the per-folder badge above */}
+      {conflictDialogFolder && (
+        <ConflictResolutionDialog
+          folderId={conflictDialogFolder.id}
+          folderName={
+            conflictDialogFolder.local_path.replace(/\\/g, '/').split('/').filter(Boolean).pop() ??
+            'Folder'
+          }
+          onClose={() => {
+            setConflictDialogFolder(null)
+            // Refetch counts on close — the dialog may have resolved some
+            // conflicts that we want reflected in the badge immediately.
+            refreshConflictCounts()
+          }}
+        />
       )}
     </aside>
   )

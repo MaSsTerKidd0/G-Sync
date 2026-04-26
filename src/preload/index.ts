@@ -587,6 +587,32 @@ const gsyncApi = {
     sync: (folderId: string): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('folders:sync', folderId),
 
+    // ── Conflict resolution (v1.1.0) ──
+
+    listConflicts: (folderId: string): Promise<Array<{
+      id: string
+      folder_id: string
+      relative_path: string
+      local_hash: string | null
+      local_modified_ms: number | null
+      local_size_bytes: number | null
+      drive_file_id: string | null
+      drive_modified_ms: number | null
+      drive_hash: string | null
+      sync_status: string
+      last_error: string | null
+    }>> => ipcRenderer.invoke('folders:listConflicts', folderId),
+
+    conflictCounts: (): Promise<Record<string, number>> =>
+      ipcRenderer.invoke('folders:conflictCounts'),
+
+    resolveConflict: (args: {
+      folderId: string
+      relativePath: string
+      action: 'keep-local' | 'keep-remote' | 'keep-both'
+    }): Promise<{ success: boolean; error?: string; conflictPath?: string }> =>
+      ipcRenderer.invoke('folders:resolveConflict', args),
+
     onStatusChanged: (
       cb: (payload: { folderId: string; status: string }) => void
     ): (() => void) => {
