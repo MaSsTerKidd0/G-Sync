@@ -178,10 +178,15 @@ export class FolderSyncWorker extends EventEmitter {
           ? new Date(remote.modifiedTime).getTime()
           : 0
 
-        // Conflict: remote was modified after our last known sync
+        // Conflict: remote was modified after our last known sync.
+        // Capture the fresh remote metadata so the resolution UI can show
+        // "local edited X / remote edited Y" without another Drive call.
         if (file.drive_modified_ms && remoteModifiedMs > file.drive_modified_ms) {
           console.warn(`[folderSync] Conflict detected for ${file.relative_path}`)
-          markSyncedFileConflict(file.folder_id, file.relative_path)
+          markSyncedFileConflict(file.folder_id, file.relative_path, {
+            driveModifiedMs: remoteModifiedMs,
+            driveHash: remote.md5Checksum ?? null
+          })
           return
         }
       } catch {

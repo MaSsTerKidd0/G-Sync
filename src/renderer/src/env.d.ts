@@ -331,6 +331,17 @@ interface GsyncApi {
     add(): Promise<{ success: boolean; folder?: { id: string; local_path: string; status: string }; error?: string }>
     remove(folderId: string): Promise<void>
     sync(folderId: string): Promise<{ success: boolean; error?: string }>
+    listConflicts(folderId: string): Promise<Array<{
+      id: string; folder_id: string; relative_path: string
+      local_hash: string | null; local_modified_ms: number | null; local_size_bytes: number | null
+      drive_file_id: string | null; drive_modified_ms: number | null; drive_hash: string | null
+      sync_status: string; last_error: string | null
+    }>>
+    conflictCounts(): Promise<Record<string, number>>
+    resolveConflict(args: {
+      folderId: string; relativePath: string
+      action: 'keep-local' | 'keep-remote' | 'keep-both'
+    }): Promise<{ success: boolean; error?: string; conflictPath?: string }>
     onStatusChanged(cb: (payload: { folderId: string; status: string }) => void): () => void
     onSyncProgress(cb: (payload: { folderId: string; current: number; total: number; fileName: string }) => void): () => void
   }
