@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { Loader2, Shield, Database, Info, RefreshCw, Lock, Eye, Crown, ExternalLink, HardDrive, Trash2 } from 'lucide-react'
+import { Loader2, Shield, Database, Info, RefreshCw, Lock, Eye, Crown, ExternalLink, HardDrive, Trash2, Sparkles } from 'lucide-react'
 
 interface SecurityInfo {
   tokenEncrypted: boolean
@@ -80,7 +80,16 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-export default function SettingsPanel(): React.JSX.Element {
+interface SettingsPanelProps {
+  /**
+   * Callback invoked when the user clicks "View what's new" in the About
+   * section. The parent (App.tsx) reopens the PatchNotesModal regardless of
+   * whether the user has already dismissed it for this version.
+   */
+  onShowPatchNotes?: () => void
+}
+
+export default function SettingsPanel({ onShowPatchNotes }: SettingsPanelProps = {}): React.JSX.Element {
   const [securityInfo, setSecurityInfo] = useState<SecurityInfo | null>(null)
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null)
   const [backups, setBackups] = useState<BackupInfo[]>([])
@@ -604,7 +613,19 @@ export default function SettingsPanel(): React.JSX.Element {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">G-Sync version</span>
-              <span className="text-sm text-g-text dark:text-g-text-dark font-mono">{appInfo.version}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-g-text dark:text-g-text-dark font-mono">{appInfo.version}</span>
+                {onShowPatchNotes && (
+                  <button
+                    onClick={onShowPatchNotes}
+                    className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-g-primary dark:text-g-primary-dark bg-g-primary/8 dark:bg-g-primary-dark/10 hover:bg-g-primary/15 dark:hover:bg-g-primary-dark/20 rounded-md transition-colors"
+                    title="Re-open the release notes for this version"
+                  >
+                    <Sparkles size={12} />
+                    View what's new
+                  </button>
+                )}
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-g-text-secondary dark:text-g-text-secondary-dark">Electron</span>

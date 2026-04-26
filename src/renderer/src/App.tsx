@@ -379,7 +379,7 @@ function App(): React.JSX.Element {
               </div>
             ) : activeView === 'settings' ? (
               <div className="h-full animate-fade-in overflow-auto custom-scrollbar p-6">
-                <SettingsPanel />
+                <SettingsPanel onShowPatchNotes={() => setShowPatchNotes(true)} />
               </div>
             ) : null}
           </div>
