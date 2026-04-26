@@ -1,11 +1,17 @@
 /**
  * Patch Notes Modal — shown once per version update.
  * Displays release highlights and a "Don't show until next update" checkbox.
+ *
+ * Content for v1.1.0:
+ *   - Photos tab removed (Google API deprecated)
+ *   - Synced-folder bugs fixed (no-op CASE, conflict preservation)
+ *   - Expanded MIME types (HEIC, MOV, FLAC, etc.)
+ *   - Force re-login on first launch
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Sparkles, FolderSync, Trash2, Share2, Wand2, X } from 'lucide-react'
+import { Sparkles, Bug, ImageOff, FileType, ShieldCheck, X } from 'lucide-react'
 
 interface PatchNotesModalProps {
   version: string
@@ -55,38 +61,39 @@ export default function PatchNotesModal({ version, onDismiss }: PatchNotesModalP
           <div className="flex items-center gap-2 mb-2">
             <Sparkles size={20} className="text-white/70" />
             <span className="text-xs font-bold uppercase tracking-wider text-white/70">
-              Release Notes
+              What's New
             </span>
           </div>
           <h2 className="text-2xl font-bold tracking-tight">
             G-Sync <span className="font-mono">v{version}</span>
           </h2>
           <p className="text-sm text-white/70 mt-1">
-            First public practice release — local-only, not yet OAuth-verified with Google.
+            Hardening release — Synced Folders is more reliable, plus a few
+            housekeeping changes.
           </p>
         </div>
 
         {/* Content */}
         <div className="px-6 py-5 space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
           <FeatureItem
-            icon={<FolderSync size={16} className="text-g-primary dark:text-g-primary-dark" />}
-            title="Syncable Folders"
-            description="Pick any local folder and have it mirrored two-way with Google Drive in the background. Headline feature of v1.0.0."
+            icon={<Bug size={16} className="text-g-success dark:text-g-success-dark" />}
+            title="Synced Folders bugs squashed"
+            description="Files no longer re-upload when their content hasn't changed, and conflict markers stick around until you resolve them — no more silent overwrites when you keep editing a conflicted file."
           />
           <FeatureItem
-            icon={<Trash2 size={16} className="text-g-accent" />}
-            title="Trash-First Delete Flow"
-            description="Safer deletes that go to a dedicated Trash view with Restore, Permanent Delete and Empty Trash actions."
+            icon={<ImageOff size={16} className="text-g-text-secondary dark:text-g-text-secondary-dark" />}
+            title="Photos tab removed"
+            description="Google deprecated the Photos Library API for third-party apps in March 2025, so the Photos tab returned empty results for everyone. We've removed it; your image and video files are still in My Drive. May return via the new Picker API in a future release."
           />
           <FeatureItem
-            icon={<Share2 size={16} className="text-g-success dark:text-g-success-dark" />}
-            title="Sharing & Account"
-            description="Shared-with-me tab, share dialog with permission management, and a profile menu with storage plan info."
+            icon={<FileType size={16} className="text-g-primary dark:text-g-primary-dark" />}
+            title="More file types preview correctly"
+            description="HEIC/HEIF (iPhone photos), MOV, MKV, FLAC, AAC, M4A, AVIF, BMP, TIFF, YAML, TOML and more now upload with the right content type, so Drive can generate previews and thumbnails."
           />
           <FeatureItem
-            icon={<Wand2 size={16} className="text-purple-500" />}
-            title="Smart Cleanup Tools"
-            description="Duplicate finder, large file browser, storage breakdown, plus star/unstar, zip downloads and a Google-style light/dark theme."
+            icon={<ShieldCheck size={16} className="text-g-accent" />}
+            title="Fresh login on upgrade"
+            description="You'll be asked to sign in again on first launch. Your previous tokens still carried the now-removed Photos permission — we replace them rather than keep stale grants."
           />
         </div>
 
