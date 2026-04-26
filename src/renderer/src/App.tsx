@@ -5,14 +5,13 @@ import TopBar from './components/layout/TopBar'
 import StatusBar from './components/layout/StatusBar'
 import DetailsPanel from './components/layout/DetailsPanel'
 import ExplorerRoot from './components/explorer/ExplorerRoot'
-import PhotosGrid from './components/PhotosGrid'
 import CleanupDashboard from './components/cleanup/CleanupDashboard'
 import SettingsPanel from './components/SettingsPanel'
 import { ShareDialog } from './components/explorer/ShareDialog'
 import type { ViewMode, SortBy, SortDir, DriveItemDTO } from './types/explorer'
 
 type AuthStatus = 'disconnected' | 'connecting' | 'connected'
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared' | 'media'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
 
 function App(): React.JSX.Element {
   // ── Auth state ──
@@ -327,10 +326,6 @@ function App(): React.JSX.Element {
                   onShareItem={setShareItem}
                   showShared
                 />
-              </div>
-            ) : activeView === 'media' ? (
-              <div className="h-full animate-fade-in overflow-hidden">
-                <PhotosGrid />
               </div>
             ) : activeView === 'smart-tools' ? (
               <div className="h-full animate-fade-in overflow-hidden">

@@ -433,33 +433,6 @@ const gsyncApi = {
     }
   },
 
-  // ── Photos API ──
-
-  photos: {
-    list: (args?: {
-      pageToken?: string
-      pageSize?: number
-    }): Promise<{
-      success: boolean
-      mediaItems: Array<{
-        id: string
-        productUrl: string
-        baseUrl: string
-        mimeType: string
-        filename: string
-        mediaMetadata: {
-          creationTime?: string
-          width?: string
-          height?: string
-          photo?: { cameraMake?: string; cameraModel?: string }
-          video?: { cameraMake?: string; cameraModel?: string; fps?: number; status?: string }
-        }
-      }>
-      nextPageToken?: string
-      error?: string
-    }> => ipcRenderer.invoke('photos:list', args)
-  },
-
   // ── Phase 5: Cleanup / Smart Tools API ──
 
   cleanup: {

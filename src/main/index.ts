@@ -91,7 +91,6 @@ import {
   listSyncedFolders,
   getSyncedFolder
 } from './db/syncedFoldersStore'
-import { listMediaItemsThrottled } from './photos/photosApi'
 import { folderWatcher } from './sync/folderWatcher'
 import { folderSyncWorker } from './sync/folderSyncWorker'
 
@@ -281,22 +280,6 @@ function registerIpcHandlers(): void {
       const message = err instanceof Error ? err.message : String(err)
       console.error('[IPC] drive:unshareFile error:', message)
       return { success: false, error: message }
-    }
-  })
-
-  // ── Photos handlers ──
-
-  ipcMain.handle('photos:list', async (_e, args?: { pageToken?: string; pageSize?: number }) => {
-    try {
-      const result = await listMediaItemsThrottled({
-        pageToken: args?.pageToken,
-        pageSize: args?.pageSize
-      })
-      return { success: true, mediaItems: result.mediaItems, nextPageToken: result.nextPageToken }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      console.error('[IPC] photos:list error:', message)
-      return { success: false, mediaItems: [], error: message }
     }
   })
 

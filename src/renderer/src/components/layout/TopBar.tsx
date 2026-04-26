@@ -3,7 +3,7 @@ import { Search, LayoutGrid, List, X, CircleUserRound } from 'lucide-react'
 import type { ViewMode, SortBy, SortDir } from '../../types/explorer'
 import { AccountMenu } from './AccountMenu'
 
-type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared' | 'media'
+type ActiveView = 'explorer' | 'smart-tools' | 'settings' | 'trash' | 'shared'
 
 interface TopBarProps {
   activeView: ActiveView
@@ -27,7 +27,6 @@ interface TopBarProps {
 const VIEW_TITLES: Record<ActiveView, string> = {
   explorer: 'My Drive',
   shared: 'Shared with me',
-  media: 'Photos',
   trash: 'Trash',
   'smart-tools': 'Smart Tools',
   settings: 'Settings'

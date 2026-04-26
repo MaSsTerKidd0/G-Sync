@@ -1,14 +1,70 @@
-import { shell } from 'electron'
+import { app, shell } from 'electron'
 import { createServer, IncomingMessage, ServerResponse } from 'http'
 import { randomBytes, createHash } from 'crypto'
 import { URL } from 'url'
 import { TokenData, saveTokens, loadTokens, clearTokens, isTokenExpired } from './tokenStore'
+import { getSetting, setSetting } from '../db/settingsStore'
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive'
-const PHOTOS_SCOPE = 'https://www.googleapis.com/auth/photoslibrary.readonly'
-const ALL_SCOPES = `${DRIVE_SCOPE} ${PHOTOS_SCOPE}`
+// v1.1.0: PHOTOS_SCOPE was removed because Google's Photos Library API was
+// effectively deprecated for third-party apps in March 2025. We only request
+// the Drive scope now. Bumping MIN_LOGIN_VERSION below forces every existing
+// user to re-consent on first launch so their stored tokens no longer carry
+// the dropped photoslibrary.readonly scope.
+const ALL_SCOPES = DRIVE_SCOPE
+
+// If `last_login_version` in the settings store is older than this, we wipe
+// the user's tokens and require a fresh login. Bump this every time the set
+// of OAuth scopes we request changes.
+const MIN_LOGIN_VERSION = '1.1.0'
+
+/** Compare two semver-ish strings ("1.2.3"). Returns negative / 0 / positive. */
+function compareSemver(a: string, b: string): number {
+  const parse = (s: string): number[] =>
+    s.split('-')[0].split('.').map((n) => parseInt(n, 10) || 0)
+  const aParts = parse(a)
+  const bParts = parse(b)
+  for (let i = 0; i < 3; i++) {
+    const diff = (aParts[i] ?? 0) - (bParts[i] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
+/**
+ * Force a re-login if the stored tokens were granted under an older app
+ * version with a different scope set. Safe to call repeatedly — it is a
+ * no-op once last_login_version is up-to-date.
+ *
+ * Returns `true` when tokens were just cleared (caller may want to surface
+ * a one-time UI message; the renderer also re-checks auth status anyway).
+ */
+export function enforceMinLoginVersion(): boolean {
+  const tokens = loadTokens()
+  if (!tokens) return false
+
+  const lastLoginVer = getSetting('last_login_version') ?? '0.0.0'
+  if (compareSemver(lastLoginVer, MIN_LOGIN_VERSION) >= 0) return false
+
+  console.warn(
+    `[OAuth] Stored tokens were granted under v${lastLoginVer}; ` +
+      `v${MIN_LOGIN_VERSION} requires re-login (scope set changed). Clearing tokens.`
+  )
+  clearTokens()
+  return true
+}
+
+/** Stamp the settings store with the current app version on successful login. */
+function markLoginVersion(): void {
+  try {
+    setSetting('last_login_version', app.getVersion())
+  } catch (err) {
+    // Non-critical: if this fails, the user just gets re-prompted again next time.
+    console.warn('[OAuth] Failed to record last_login_version:', err)
+  }
+}
 
 function getClientId(): string {
   const id = process.env.GSYNC_GOOGLE_CLIENT_ID
@@ -178,6 +234,8 @@ async function exchangeCodeForTokens(
   }
 
   saveTokens(tokens)
+  // Stamp the version so future launches don't trigger the force-relogin path.
+  markLoginVersion()
   return tokens
 }
 
@@ -249,6 +307,10 @@ export async function getValidAccessToken(): Promise<string | null> {
 }
 
 export function getAuthStatus(): { connected: boolean; encryptionWarning?: string } {
+  // Wipe tokens whose granted scopes no longer match what this version asks
+  // for. The renderer treats a cleared token as "disconnected" and the user
+  // re-logs in via the normal flow.
+  enforceMinLoginVersion()
   const tokens = loadTokens()
   return {
     connected: tokens !== null && !!tokens.refresh_token
