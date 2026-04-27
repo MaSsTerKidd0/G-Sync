@@ -307,21 +307,6 @@ interface GsyncApi {
     set(key: string, value: string): Promise<void>
     getAll(): Promise<Record<string, string>>
   }
-  photos: {
-    list(args?: { pageToken?: string; pageSize?: number }): Promise<{
-      success: boolean
-      mediaItems: Array<{
-        id: string; productUrl: string; baseUrl: string; mimeType: string; filename: string
-        mediaMetadata: {
-          creationTime?: string; width?: string; height?: string
-          photo?: { cameraMake?: string; cameraModel?: string }
-          video?: { cameraMake?: string; cameraModel?: string; fps?: number; status?: string }
-        }
-      }>
-      nextPageToken?: string
-      error?: string
-    }>
-  }
   folders: {
     list(): Promise<Array<{
       id: string; local_path: string; drive_folder_id: string | null

@@ -13,7 +13,11 @@ const DEFAULTS: Record<string, string> = {
   keep_signed_in: 'true',
   ignore_hidden_files: 'false',
   notify_on_sync_complete: 'true',
-  last_seen_version: '0.0.0'
+  last_seen_version: '0.0.0',
+  // Tracks the app version under which the user last completed a login.
+  // Used by googleOAuth.enforceMinLoginVersion() to invalidate tokens whose
+  // granted scopes no longer match the current MIN_LOGIN_VERSION.
+  last_login_version: '0.0.0'
 }
 
 export function getSetting(key: string): string | null {
